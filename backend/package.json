@@ -1,0 +1,17 @@
+{
+  "name": "slatelink-backend",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun run --watch src/index.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@elysiajs/static": "^1.4.7",
+    "elysia": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
