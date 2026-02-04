@@ -1,0 +1,58 @@
+services:
+  haproxy:
+    image: haproxytech/haproxy-ubuntu:s6-latest
+    container_name: slatelink-haproxy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8404:8404"
+    volumes:
+      - ./haproxy:/usr/local/etc/haproxy:rw
+      - haproxy_ssl:/usr/local/etc/haproxy/ssl:rw
+    networks:
+      - haproxy_net
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: slatelink-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - DATAPLANE_API_URL=http://haproxy:5555
+      - DATAPLANE_API_USER=${DATAPLANE_API_USER:-admin}
+      - DATAPLANE_API_PASSWORD=${DATAPLANE_API_PASSWORD:-adminpwd}
+      - DATABASE_PATH=/data/app.db
+      - HAPROXY_STATS_URL=http://haproxy:8404/stats
+    volumes:
+      - backend_data:/data
+    networks:
+      - haproxy_net
+    depends_on:
+      - haproxy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: slatelink-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - PUBLIC_BACKEND_URL=http://localhost:3000
+    networks:
+      - haproxy_net
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+networks:
+  haproxy_net:
+    driver: bridge
+
+volumes:
+  haproxy_ssl:
+  backend_data:

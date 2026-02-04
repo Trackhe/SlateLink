@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+.output/
+.svelte-kit/
+
+# Database (local dev; production uses volume)
+*.db
+*.db-journal
+
+# Logs and OS
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Certbot
+certbot/conf/
+certbot/www/
+certbot/*.pem
+
+# Data directories
+data/
