@@ -76,3 +76,61 @@ export async function getStats(options?: {
 	if (options?.parent) query.parent = options.parent;
 	return dpaFetch('/v3/services/haproxy/stats/native', query);
 }
+
+/** Liste der SSL-Zertifikate (Storage). */
+export async function getSslCertificates(): Promise<unknown> {
+	return dpaFetch('/v3/services/haproxy/storage/ssl_certificates');
+}
+
+/** Neues Zertifikat hochladen (multipart, storage_name = Dateiname). */
+export async function uploadSslCertificate(
+	storageName: string,
+	pemContent: string
+): Promise<unknown> {
+	const version = await getConfigurationVersion();
+	const form = new FormData();
+	form.append(
+		'file_upload',
+		new Blob([pemContent], { type: 'application/x-pem-file' }),
+		storageName
+	);
+	const url = new URL(
+		`/v3/services/haproxy/storage/ssl_certificates?version=${version}`,
+		dpaBaseUrl
+	);
+	const res = await fetch(url.toString(), {
+		method: 'POST',
+		headers: { Authorization: dpaAuthHeader },
+		body: form
+	});
+	if (!res.ok) {
+		const text = await res.text();
+		throw new Error(`DPA POST ssl_certificates: ${res.status} – ${text || res.statusText}`);
+	}
+	return res.json();
+}
+
+/** Vorhandenes Zertifikat ersetzen (PEM-Inhalt). */
+export async function replaceSslCertificate(
+	storageName: string,
+	pemContent: string
+): Promise<unknown> {
+	const version = await getConfigurationVersion();
+	const url = new URL(
+		`/v3/services/haproxy/storage/ssl_certificates/${encodeURIComponent(storageName)}?version=${version}`,
+		dpaBaseUrl
+	);
+	const res = await fetch(url.toString(), {
+		method: 'PUT',
+		headers: {
+			Authorization: dpaAuthHeader,
+			'Content-Type': 'text/plain'
+		},
+		body: pemContent
+	});
+	if (!res.ok) {
+		const text = await res.text();
+		throw new Error(`DPA PUT ssl_certificates: ${res.status} – ${text || res.statusText}`);
+	}
+	return res.json();
+}
