@@ -26,13 +26,15 @@
 | 11 | **Feature: Unit-Tests** – Vitest, db/audit/stats/dataplane (17 Tests) | `feature/unit-tests` | ✅ |
 | 12 | **Feature: Stats-Snapshot-Timer** – periodisch, Retention, hooks.server | `feature/stats-snapshot-timer` | ✅ |
 | 13 | **Feature: Komponentendiagramm** – Mermaid in README | `feature/component-diagram` | ✅ |
+| 14 | **M4: Config-Detail-Seiten** – getFrontend/getBackend, /config/frontends/[name], /config/backends/[name], Links | `feature/config-detail-pages` | ✅ |
+| 15 | **M4: Konfiguration schreiben** – create/update/delete Frontend/Backend (DPA + API + Audit) | `feature/config-write-api` | ✅ |
 
 ---
 
 ## Später (laut IMPLEMENTATION.md)
 
-- Konfiguration schreiben (Frontend/Backend/Server über DPA)
 - Optional: Multipart Certbot, API-Key für Hook
+- UI-Formulare für Anlegen/Ändern/Löschen (können über API genutzt werden)
 
 ---
 
@@ -51,5 +53,7 @@
 - [x] 11. feature/unit-tests
 - [x] 12. feature/stats-snapshot-timer
 - [x] 13. feature/component-diagram
+- [x] 14. feature/config-detail-pages
+- [x] 15. feature/config-write-api
 
 *Status wird bei jedem Commit aktualisiert.*
