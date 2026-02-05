@@ -13,3 +13,7 @@ const auth =
 
 export const dpaBaseUrl = baseUrl;
 export const dpaAuthHeader = `Basic ${auth}`;
+
+/** Pfad zur SQLite-Datenbank (z. B. data/app.db). */
+export const databasePath =
+	env.DATABASE_PATH ?? 'data/app.db';
