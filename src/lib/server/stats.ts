@@ -1,9 +1,14 @@
 /**
  * Server-only: Stats-Snapshots (DPA getStats → SQLite). writeStatsSnapshot, getStatsHistory.
+ * Optional: periodischer Timer und Retention.
  */
 import { getStats } from '$lib/server/dataplane';
 import { getDatabase } from '$lib/server/db/index';
 import type { StatsSnapshotRow } from '$lib/server/db/index';
+import {
+	statsSnapshotIntervalMs,
+	statsRetentionDays
+} from '$lib/server/config';
 
 /** Aktuelle Stats von der DPA holen und als Snapshot in die DB schreiben. */
 export async function writeStatsSnapshot(): Promise<{ id: number }> {
@@ -15,6 +20,43 @@ export async function writeStatsSnapshot(): Promise<{ id: number }> {
 	);
 	const result = stmt.run(payload);
 	return { id: result.lastInsertRowid as number };
+}
+
+/** Snapshots löschen, die älter als die angegebene Anzahl Tage sind. */
+export function deleteSnapshotsOlderThanDays(days: number): number {
+	if (days <= 0) return 0;
+	const db = getDatabase();
+	const cutoff = new Date();
+	cutoff.setDate(cutoff.getDate() - days);
+	const iso = cutoff.toISOString();
+	const result = db.prepare(
+		`DELETE FROM stats_snapshots WHERE created_at < ?`
+	).run(iso);
+	return result.changes;
+}
+
+let timerStarted = false;
+
+/** Startet den periodischen Stats-Snapshot-Timer (einmal pro App-Start). */
+export function startStatsSnapshotTimer(): void {
+	if (timerStarted) return;
+	timerStarted = true;
+	if (statsSnapshotIntervalMs <= 0) return;
+
+	const tick = async () => {
+		try {
+			await writeStatsSnapshot();
+			if (statsRetentionDays > 0) {
+				deleteSnapshotsOlderThanDays(statsRetentionDays);
+			}
+		} catch {
+			// Fehler loggen, Timer läuft weiter
+		}
+	};
+
+	setInterval(tick, statsSnapshotIntervalMs);
+	// Ersten Snapshot nach kurzer Verzögerung (damit DPA erreichbar ist)
+	setTimeout(tick, 5000);
 }
 
 export type StatsHistoryOptions = {
