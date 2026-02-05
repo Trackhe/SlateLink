@@ -4,13 +4,36 @@ Web-Interface zur Verwaltung von HAProxy über die offizielle **HAProxy Data Pla
 
 ## Architektur
 
+```mermaid
+flowchart LR
+  subgraph extern [Extern]
+    User[Browser]
+    Certbot[Certbot]
+  end
+  subgraph app [SvelteKit-App :3001]
+    UI[Seiten / UI]
+    API["API-Routen\n+server.ts"]
+    Server["$lib/server\n(dataplane, audit,\nstats, db)"]
+    UI --> API
+    API --> Server
+  end
+  subgraph haproxy [HAProxy-Stack]
+    DPA[Data Plane API :5555]
+    HAProxy[HAProxy]
+  end
+  User -->|"/" + "/api/*"| app
+  Certbot -->|"POST /api/certificates/upload-from-certbot"| app
+  Server -->|REST + Basic Auth| DPA
+  DPA -->|stats socket| HAProxy
+```
+
 - **HAProxy** (mit Data Plane API) – Reverse Proxy, Stats-Frontend auf Port 8404
 - **App** (ein SvelteKit-Projekt, Node + adapter-node) – eine Anwendung: API unter `/api/*`, UI (Dashboard, Konfiguration, Zertifikate, Audit-Log) unter `/`, Port 3001
 
 ## Voraussetzungen
 
 - **HAProxy:** immer per Docker (Docker und Docker Compose)
-- **App:** optional mit Docker oder lokal (Node.js 22+)
+- **App:** optional mit Docker oder lokal (Node.js 22+, **Bun** als Package Manager)
 
 ## Zwei Betriebsarten
 
@@ -77,7 +100,7 @@ Wenn die App **http://localhost:5555** nicht erreicht:
 3. **App lokal:** In `.env` oder `.env.local` muss stehen:
 
    - `DATAPLANE_API_URL=http://localhost:5555`
-   - Nach Änderung an .env: App neu starten (`npm run dev`).
+   - Nach Änderung an .env: App neu starten (`bun run dev`).
 
 4. **Schnellprüfung:** `sh scripts/check-haproxy.sh` prüft Container und Erreichbarkeit von localhost:5555.
 
