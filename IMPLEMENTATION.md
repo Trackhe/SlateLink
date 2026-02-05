@@ -59,27 +59,27 @@
 ## 2. Implementierte Funktionen (Übersicht)
 
 - **config:** config (src/lib/server/config.ts)
-- **dataplane:** getConfigurationVersion(), getInfo(), getFrontends(), getBackends(), getSslCertificates(), uploadSslCertificate(), replaceSslCertificate(), getDataplaneBaseUrl(), fetchWithAuth(path, options)
+- **dataplane:** getInfo(), getConfigurationVersion(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); createFrontend/Backend(), updateFrontend/Backend(), deleteFrontend/Backend(); getSslCertificates(), upload/replaceSslCertificate()
 - **audit:** logAction(entry), getAuditLog(options)
-- **stats:** fetchAndParseStats(), writeStatsSnapshot(rows)
-- **db:** getDatabase(), closeDatabase(), schemaStatements, StatsSnapshotRow, AuditLogRow (better-sqlite3)
-- **UI:** Seiten Dashboard, Config, Certificates, Audit; rufen fetch("/api/...") auf
+- **stats:** writeStatsSnapshot(), getStatsHistory(), deleteSnapshotsOlderThanDays(), startStatsSnapshotTimer()
+- **db:** getDatabase(), closeDatabase(), schemaStatements, AuditLogRow, StatsSnapshotRow (better-sqlite3)
+- **UI:** Seiten Dashboard, Config (Liste + Detail frontends/backends), Certificates, Audit
 
 ---
 
 ## 3. Tests
 
-**Package Manager:** **Bun** – Tests mit `bun test`.  
-**Ort:** z. B. `src/**/*.test.ts` oder `tests/**/*.test.ts` (noch nicht angelegt).
+**Lauf:** `bun run test` (Vitest). Vor jedem Commit Tests ausführen; nur bei grün committen (Plan §9.1).  
+**Ort:** `src/lib/server/**/*.test.ts`.
 
 | Datei | Getestet |
 |-------|----------|
-| `db/index.test.ts` | Schema: audit_log, stats_snapshots; INSERT/SELECT. |
-| `lib/audit.test.ts` | logAction (Eintrag + id, optionale Felder null); getAuditLog (alle, Filter action, limit/offset). |
-| `lib/dataplane.test.ts` | getInfo (200/401); getConfigurationVersion (version/fehlt); getFrontends (Array/v2-Wrapper). |
-| `lib/stats.test.ts` | fetchAndParseStats (CSV parsen, Zeilen); Fehler bei 502. |
+| `src/lib/server/db/index.test.ts` | Schema audit_log, stats_snapshots; INSERT/SELECT. DB mit `:memory:` (vi.mock `$env/dynamic/private` → process.env). |
+| `src/lib/server/audit.test.ts` | logAction (id, optionale Felder); getAuditLog (Reihenfolge, Filter action, limit). Nach Test: closeDatabase(). |
+| `src/lib/server/stats.test.ts` | getStatsHistory (leer, mit Daten, limit); deleteSnapshotsOlderThanDays. |
+| `src/lib/server/dataplane.test.ts` | getInfo (200/401); getConfigurationVersion (Header/fehlt); getFrontends, getFrontend(name), getBackends, getBackend(name) (Pfad + Response). globalThis.fetch mocken. |
 
-**Hinweis:** Audit-Tests: setDatabaseOverride(inMemoryDb). Dataplane/Stats-Tests: globalThis.fetch mocken.
+**Regel:** Neue Module/Routen zeitnah testen; Test-Doku hier anpassen und mit committen.
 
 ---
 

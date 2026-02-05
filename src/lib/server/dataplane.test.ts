@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getInfo, getConfigurationVersion, getFrontends } from "./dataplane";
+import {
+	getInfo,
+	getConfigurationVersion,
+	getFrontends,
+	getFrontend,
+	getBackends,
+	getBackend,
+} from "./dataplane";
 
 const mockFetch = vi.fn();
 vi.mock("$env/dynamic/private", () => ({
@@ -62,6 +69,45 @@ describe("dataplane", () => {
     expect(result).toEqual([{ name: "http_front" }]);
     expect(mockFetch).toHaveBeenCalledWith(
       "http://test-dpa:5555/v3/services/haproxy/configuration/frontends",
+      expect.any(Object)
+    );
+  });
+
+  it("getFrontend(name) calls correct path", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ name: "http_front", mode: "http" }),
+    });
+    const result = await getFrontend("http_front");
+    expect(result).toEqual({ name: "http_front", mode: "http" });
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://test-dpa:5555/v3/services/haproxy/configuration/frontends/http_front",
+      expect.any(Object)
+    );
+  });
+
+  it("getBackends calls correct path", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([{ name: "default_fallback" }]),
+    });
+    const result = await getBackends();
+    expect(result).toEqual([{ name: "default_fallback" }]);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://test-dpa:5555/v3/services/haproxy/configuration/backends",
+      expect.any(Object)
+    );
+  });
+
+  it("getBackend(name) calls correct path", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ name: "default_fallback", mode: "http" }),
+    });
+    const result = await getBackend("default_fallback");
+    expect(result).toEqual({ name: "default_fallback", mode: "http" });
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://test-dpa:5555/v3/services/haproxy/configuration/backends/default_fallback",
       expect.any(Object)
     );
   });

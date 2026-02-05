@@ -29,6 +29,7 @@
 | 14 | **M4: Config-Detail-Seiten** – getFrontend/getBackend, /config/frontends/[name], /config/backends/[name], Links | `feature/config-detail-pages` | ✅ |
 | 15 | **M4: Konfiguration schreiben** – create/update/delete Frontend/Backend (DPA + API + Audit) | `feature/config-write-api` | ✅ |
 | 16 | **Meilenstein M4 abgeschlossen** | `milestone/m4-config-complete` | ✅ |
+| 17 | **Tests + Doku** – getFrontend/getBackend Tests (20 Tests), IMPLEMENTATION §3 Tests + Funktionen | `feature/tests-docs` | ✅ |
 
 ---
 
@@ -57,5 +58,6 @@
 - [x] 14. feature/config-detail-pages
 - [x] 15. feature/config-write-api
 - [x] 16. milestone/m4-config-complete
+- [x] 17. feature/tests-docs
 
 *Status wird bei jedem Commit aktualisiert.*
