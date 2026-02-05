@@ -28,6 +28,7 @@
 | 13 | **Feature: Komponentendiagramm** – Mermaid in README | `feature/component-diagram` | ✅ |
 | 14 | **M4: Config-Detail-Seiten** – getFrontend/getBackend, /config/frontends/[name], /config/backends/[name], Links | `feature/config-detail-pages` | ✅ |
 | 15 | **M4: Konfiguration schreiben** – create/update/delete Frontend/Backend (DPA + API + Audit) | `feature/config-write-api` | ✅ |
+| 16 | **Meilenstein M4 abgeschlossen** | `milestone/m4-config-complete` | ✅ |
 
 ---
 
@@ -55,5 +56,6 @@
 - [x] 13. feature/component-diagram
 - [x] 14. feature/config-detail-pages
 - [x] 15. feature/config-write-api
+- [x] 16. milestone/m4-config-complete
 
 *Status wird bei jedem Commit aktualisiert.*

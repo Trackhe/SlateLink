@@ -23,11 +23,11 @@
 | Komponente | Datei(en) | Beschreibung |
 |------------|-----------|--------------|
 | Konfiguration | `src/lib/server/config.ts` | Env: DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL, STATS_SNAPSHOT_INTERVAL_MS, STATS_RETENTION_DAYS. |
-| Data Plane API Client | `src/lib/server/dataplane.ts` | getConfigurationVersion(), getInfo(), getFrontends(), getBackends(), getSslCertificates(), uploadSslCertificate(), replaceSslCertificate(), getDataplaneBaseUrl(), fetchWithAuth(). |
+| Data Plane API Client | `src/lib/server/dataplane.ts` | getInfo(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); createFrontend/Backend, updateFrontend/Backend, deleteFrontend/Backend (Version-Handling); getSslCertificates(), upload/replaceSslCertificate(). |
 | Audit Logger | `src/lib/server/audit.ts` | logAction(entry), getAuditLog(options). |
 | Datenbank | `src/lib/server/db/schema.ts`, `src/lib/server/db/index.ts` | SQLite (better-sqlite3). Tabellen: stats_snapshots, audit_log. getDatabase(), closeDatabase(). |
 | Stats Collector | `src/lib/server/stats.ts` | writeStatsSnapshot(), getStatsHistory(), deleteSnapshotsOlderThanDays(), startStatsSnapshotTimer(). |
-| API-Routen | `src/routes/api/**/+server.ts` | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history, POST /api/certificates/upload-from-certbot. |
+| API-Routen | `src/routes/api/**/+server.ts` | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history; POST/PUT/DELETE /api/config/frontends, /api/config/frontends/[name], /api/config/backends, /api/config/backends/[name] (mit Audit); POST /api/certificates/upload-from-certbot. |
 | UI | `src/routes/+layout.svelte`, `+page.svelte`, `config/`, `certificates/`, `audit/` | Layout mit Navigation; Seiten rufen fetch("/api/...") auf (Same-Origin). |
 | Build | `package.json`, `svelte.config.js`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js` | adapter-node, Tailwind 3, Vite 5. |
 | Docker | `Dockerfile` | node:22-alpine, `bun run build`, node build, Port 3001. **Package Manager:** Bun (`bun install`, `bun run dev`, `bun test`). |
@@ -85,8 +85,8 @@
 
 ## 4. Noch nicht umgesetzt
 
-- **Konfiguration schreiben:** Frontend/Backend/Server anlegen/ändern/löschen über DPA (mit Version-Handling und Audit-Log).
 - **Optional:** Multipart-Upload für Certbot-Hook (aktuell nur JSON/text/plain); API-Key für Hook-Endpoint.
+- **Optional:** UI-Formulare für Frontend/Backend anlegen/ändern/löschen (API ist vorhanden: POST/PUT/DELETE /api/config/frontends|backends).
 
 ---
 
@@ -99,4 +99,4 @@
 
 ---
 
-*Zuletzt aktualisiert: M2–M6; Unit-Tests (Vitest, 17 Tests); Stats-Snapshot-Timer + Retention; Komponentendiagramm in README.*
+*Zuletzt aktualisiert: M2–M6; M4 Konfiguration (Detail-Seiten, Schreib-API + Audit); Unit-Tests; Stats-Timer; Komponentendiagramm.*
