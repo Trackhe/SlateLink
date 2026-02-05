@@ -8,8 +8,8 @@
 
 | # | Schritt | Tag | Status |
 |---|--------|-----|--------|
-| 1 | **Commit: Aktueller Stand** – SvelteKit-Grundgerüst, Control-Plane-Status (Dashboard), /api/info, Port 3001, Dataplane getInfo/getStats | `milestone/m2-app-base` | ⬜ |
-| 2 | **Feature: GET /api/health** – Health-Check-Endpoint | `feature/health-api` | ⬜ |
+| 1 | **Commit: Aktueller Stand** – SvelteKit-Grundgerüst, Control-Plane-Status (Dashboard), /api/info, Port 3001, Dataplane getInfo/getStats | `milestone/m2-app-base` | ✅ |
+| 2 | **Feature: GET /api/health** – Health-Check-Endpoint | `feature/health-api` | ✅ |
 | 3 | **Feature: Dataplane Config lesen** – getConfigurationVersion(), getFrontends(), getBackends() | `feature/dataplane-config-read` | ⬜ |
 | 4 | **Feature: API-Routen** – GET /api/frontends, /api/backends, /api/stats | `feature/api-frontends-backends-stats` | ⬜ |
 | 5 | **Feature: Layout + Navigation** – Nav: Dashboard, Config, Certificates, Audit | `feature/layout-navigation` | ⬜ |
@@ -31,8 +31,8 @@
 
 ## Erledigt (zum Abhaken)
 
-- [ ] 1. milestone/m2-app-base
-- [ ] 2. feature/health-api
+- [x] 1. milestone/m2-app-base
+- [x] 2. feature/health-api
 - [ ] 3. feature/dataplane-config-read
 - [ ] 4. feature/api-frontends-backends-stats
 - [ ] 5. feature/layout-navigation
