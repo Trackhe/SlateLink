@@ -1,6 +1,11 @@
 # SlateLink – Fortschritt & Roadmap
 
-**Regel:** Pro Feature / Meilenstein ein eigener Commit + ein Tag. Dieser Plan wird beim Abarbeiten abgehakt.
+**Regeln (siehe auch Plan §9.1):**
+
+- Pro Feature ein eigener Commit; Meilensteine werden getaggt.
+- **Vor jedem Commit:** Tests ausführen (`bun test`); nur bei grün committen. Tests zwischendurch ausführen.
+- **Fortschritt:** Diese Datei bei jedem erledigten Schritt abhaken und mit committen.
+- **Dokumentation:** Komponentendiagramm (z. B. in README/IMPLEMENTATION/docs) bei relevanten Änderungen aktualisieren.
 
 ---
 
@@ -18,13 +23,15 @@
 | 8 | **Feature: Stats Snapshot/History** – writeStatsSnapshot, /api/stats/snapshot, /api/stats/history | `feature/stats-snapshot-history` | ✅ |
 | 9 | **Feature: UI-Seiten** – Config-, Certificates-, Audit-Seiten mit fetch zu APIs | `feature/ui-pages` | ✅ |
 | 10 | **Meilenstein M2 abgeschlossen** | `milestone/m2-app-complete` | ✅ |
+| 11 | **Feature: Unit-Tests** – Vitest, db/audit/stats/dataplane (17 Tests) | `feature/unit-tests` | ✅ |
+| 12 | **Feature: Stats-Snapshot-Timer** – periodisch, Retention, hooks.server | `feature/stats-snapshot-timer` | ✅ |
+| 13 | **Feature: Komponentendiagramm** – Mermaid in README | `feature/component-diagram` | ✅ |
 
 ---
 
 ## Später (laut IMPLEMENTATION.md)
 
 - Konfiguration schreiben (Frontend/Backend/Server über DPA)
-- Stats-Snapshot-Timer (periodisch + Retention)
 - Optional: Multipart Certbot, API-Key für Hook
 
 ---
@@ -41,5 +48,8 @@
 - [x] 8. feature/stats-snapshot-history
 - [x] 9. feature/ui-pages
 - [x] 10. milestone/m2-app-complete
+- [x] 11. feature/unit-tests
+- [x] 12. feature/stats-snapshot-timer
+- [x] 13. feature/component-diagram
 
 *Status wird bei jedem Commit aktualisiert.*

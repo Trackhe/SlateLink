@@ -2,6 +2,8 @@
 
 **Zweck:** Beim Weiterarbeiten diese Datei lesen, um zu wissen, was bereits implementiert ist und Doppelungen zu vermeiden.
 
+**Prozess (Plan §9.1):** Commits nach Features; **Tests vor jedem Commit** (`bun test`); Fortschritt in **PROGRESS.md** tracken; **Komponentendiagramm** (z. B. README oder hier) bei relevanten Änderungen aktualisieren; Meilensteine taggen.
+
 ---
 
 ## 1. Bereits umgesetzt
@@ -28,7 +30,7 @@
 | API-Routen | `src/routes/api/**/+server.ts` | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history, POST /api/certificates/upload-from-certbot. |
 | UI | `src/routes/+layout.svelte`, `+page.svelte`, `config/`, `certificates/`, `audit/` | Layout mit Navigation; Seiten rufen fetch("/api/...") auf (Same-Origin). |
 | Build | `package.json`, `svelte.config.js`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js` | adapter-node, Tailwind 3, Vite 5. |
-| Docker | `Dockerfile` | node:22-alpine, npm run build, node build, Port 3001. |
+| Docker | `Dockerfile` | node:22-alpine, `bun run build`, node build, Port 3001. **Package Manager:** Bun (`bun install`, `bun run dev`, `bun test`). |
 
 ---
 
@@ -62,8 +64,8 @@
 
 ## 3. Tests
 
-**Ort:** `backend/src/**/*.test.ts`  
-**Ausführen:** `cd backend && bun test`
+**Package Manager:** **Bun** – Tests mit `bun test`.  
+**Ort:** z. B. `src/**/*.test.ts` oder `tests/**/*.test.ts` (noch nicht angelegt).
 
 | Datei | Getestet |
 |-------|----------|
