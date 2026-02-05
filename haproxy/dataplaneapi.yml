@@ -1,0 +1,31 @@
+config_version: 2
+name: 0b89f7f94381
+dataplaneapi:
+  host: 0.0.0.0
+  port: 5555
+  advertised:
+    api_address: ""
+    api_port: 0
+  scheme:
+  - http
+  userlist:
+    userlist: dataplaneapi
+    userlist_file: ""
+  transaction:
+    transaction_dir: /var/lib/dataplaneapi/transactions
+    backups_number: 10
+    backups_dir: /var/lib/dataplaneapi/backups
+  resources:
+    maps_dir: /usr/local/etc/haproxy/maps
+    ssl_certs_dir: /usr/local/etc/haproxy/ssl
+    general_storage_dir: /usr/local/etc/haproxy/general
+    spoe_dir: /usr/local/etc/haproxy/spoe
+haproxy:
+  config_file: /usr/local/etc/haproxy/haproxy.cfg
+  haproxy_bin: /usr/local/sbin/haproxy
+  reload:
+    reload_delay: 5
+    service_name: haproxy
+    reload_strategy: systemd
+log_targets:
+- log_to: stdout

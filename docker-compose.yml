@@ -1,45 +1,14 @@
 services:
   haproxy:
-    image: haproxytech/haproxy-ubuntu:s6-latest
-    container_name: slatelink-haproxy
+    image: haproxytech/haproxy-alpine:s6-latest
+    container_name: haproxy_main
+    user: root
     ports:
-      - "80:80"
-      - "443:443"
-      - "8404:8404"
+      - "80:8080"
+      - "443:8443"
+      - "5555:5555"
+    # environment:
     volumes:
+      # Pfad angepasst an die offizielle Struktur
       - ./haproxy:/usr/local/etc/haproxy:rw
-      - haproxy_ssl:/usr/local/etc/haproxy/ssl:rw
-      # Runtime-Stats: stats socket /var/run/haproxy.sock liegt im Container; Data Plane API (gleicher Container) nutzt ihn – kein Volume-Mount nötig.
-    networks:
-      - haproxy_net
-    restart: unless-stopped
-
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: slatelink-app
-    ports:
-      - "3000:3000"
-    environment:
-      - DATAPLANE_API_URL=http://haproxy:5555
-      - DATAPLANE_API_USER=${DATAPLANE_API_USER:-admin}
-      - DATAPLANE_API_PASSWORD=${DATAPLANE_API_PASSWORD:-adminpwd}
-      - DATABASE_PATH=/data/app.db
-      - HAPROXY_STATS_URL=http://haproxy:8404/stats
-      - STATIC_PATH=/app/frontend/build
-    volumes:
-      - backend_data:/data
-    networks:
-      - haproxy_net
-    depends_on:
-      - haproxy
-    restart: unless-stopped
-
-networks:
-  haproxy_net:
-    driver: bridge
-
-volumes:
-  haproxy_ssl:
-  backend_data:
+    restart: always

@@ -1,6 +1,6 @@
 # SlateLink – Implementierungsstand und Dokumentation
 
-**Zweck:** Beim Weiterarbeiten diese Datei lesen, um zu wissen, was bereits implementiert ist, Doppelungen zu vermeiden und Tests als Absicherung zu nutzen.
+**Zweck:** Beim Weiterarbeiten diese Datei lesen, um zu wissen, was bereits implementiert ist und Doppelungen zu vermeiden.
 
 ---
 
@@ -10,43 +10,25 @@
 
 | Komponente | Datei(en) | Beschreibung |
 |------------|-----------|--------------|
-| Docker Compose | `docker-compose.yml` | Services: haproxy (s6), backend (Bun), frontend (SvelteKit). Netz, Volumes. |
+| Docker Compose | `docker-compose.yml` | Services: haproxy (s6), app (SvelteKit). Netz, Volumes. |
 | HAProxy | `haproxy/haproxy.cfg` | global, userlist, defaults (forwardfor), Stats-Frontend :8404, HTTP-Beispiel, TCP/UDP auskommentiert. |
 | .gitignore | `.gitignore` | node_modules, .env, dist, *.db, certbot, data. |
 
 ---
 
-### M2 – Backend (Bun/Elysia)
+### M2 – App (ein SvelteKit-Projekt, Node + adapter-node)
 
 | Komponente | Datei(en) | Beschreibung |
 |------------|-----------|--------------|
-| Konfiguration | `backend/src/config.ts` | Env: DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL, PORT. getConfigForTests(overrides). |
-| Data Plane API Client | `backend/src/lib/dataplane.ts` | getConfigurationVersion(), getInfo(), getFrontends(), getBackends(), getSslCertificates(), getDataplaneBaseUrl(), fetchWithAuth(). |
-| Audit Logger | `backend/src/lib/audit.ts` | logAction(entry), getAuditLog(options). |
-| Datenbank | `backend/src/db/schema.ts`, `backend/src/db/index.ts` | Tabellen: stats_snapshots, audit_log. getDatabase(), closeDatabase(), setDatabaseOverride(). |
-| Routen | `backend/src/routes/*.ts`, `backend/src/index.ts` | /health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history. |
-| Docker | `backend/Dockerfile` | oven/bun:1-alpine, PORT 3000. |
-
----
-
-### M3 – Statistiken
-
-| Komponente | Datei(en) | Beschreibung |
-|------------|-----------|--------------|
-| Stats Collector | `backend/src/lib/stats.ts` | fetchAndParseStats() – HAProxy Stats CSV abrufen/parsen. writeStatsSnapshot(rows) – in stats_snapshots schreiben. |
-| Stats-Routen | `backend/src/routes/stats.ts` | GET /api/stats (Live), GET /api/stats/snapshot (Snapshot schreiben), GET /api/stats/history (SQLite). |
-
----
-
-### M4 – Frontend (SvelteKit + Tailwind)
-
-| Komponente | Datei(en) | Beschreibung |
-|------------|-----------|--------------|
-| App | `frontend/src/app.html`, `frontend/src/app.css`, `frontend/src/routes/+layout.svelte` | Layout mit Navigation (Dashboard, Konfiguration, Zertifikate, Audit-Log). Tailwind. |
-| API-Client | `frontend/src/lib/api/client.ts` | getBackendUrl(), fetchApi(path, options). |
-| Seiten | `frontend/src/routes/+page.svelte`, `config/+page.svelte`, `certificates/+page.svelte`, `audit/+page.svelte` | Dashboard (API-Info), Konfiguration (Frontends/Backends), Zertifikate (Liste), Audit-Log (Tabelle). |
-| Build | `frontend/package.json`, `svelte.config.js`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js` | adapter-static, Tailwind 3, Vite 5. |
-| Docker | `frontend/Dockerfile` | node:22-alpine, npm run dev, Port 5173. |
+| Konfiguration | `src/lib/server/config.ts` | Env: DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL. |
+| Data Plane API Client | `src/lib/server/dataplane.ts` | getConfigurationVersion(), getInfo(), getFrontends(), getBackends(), getSslCertificates(), uploadSslCertificate(), replaceSslCertificate(), getDataplaneBaseUrl(), fetchWithAuth(). |
+| Audit Logger | `src/lib/server/audit.ts` | logAction(entry), getAuditLog(options). |
+| Datenbank | `src/lib/server/db/schema.ts`, `src/lib/server/db/index.ts` | SQLite (better-sqlite3). Tabellen: stats_snapshots, audit_log. getDatabase(), closeDatabase(). |
+| Stats Collector | `src/lib/server/stats.ts` | fetchAndParseStats(), writeStatsSnapshot(rows). |
+| API-Routen | `src/routes/api/**/+server.ts` | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history, POST /api/certificates/upload-from-certbot. |
+| UI | `src/routes/+layout.svelte`, `+page.svelte`, `config/`, `certificates/`, `audit/` | Layout mit Navigation; Seiten rufen fetch("/api/...") auf (Same-Origin). |
+| Build | `package.json`, `svelte.config.js`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js` | adapter-node, Tailwind 3, Vite 5. |
+| Docker | `Dockerfile` | node:22-alpine, npm run build, node build, Port 3001. |
 
 ---
 
@@ -60,7 +42,7 @@
 
 | Datei | Inhalt |
 |-------|--------|
-| `.env.example` | DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL, PORT, PUBLIC_BACKEND_URL. |
+| `.env.example` | DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL, PORT. |
 | `README.md` | Architektur, Schnellstart, Entwicklung, API-Übersicht, Verweis auf IMPLEMENTATION.md, Meilensteine. |
 
 **Certbot-Hook:** `POST /api/certificates/upload-from-certbot` – akzeptiert JSON `{ pem, storage_name }` oder text/plain mit Header `x-storage-name`. Holt Version von DPA, ersetzt vorhandenes Zertifikat (PUT) oder lädt neues (POST), schreibt Audit-Eintrag. Certbot-Skript kann z. B. `curl -X POST -H "Content-Type: application/json" -d '{"pem":"'$(cat fullchain.pem)$(cat privkey.pem)'", "storage_name":"example.com.pem"}'` nutzen.
@@ -69,12 +51,12 @@
 
 ## 2. Implementierte Funktionen (Übersicht)
 
-- **config:** config, getConfigForTests(overrides)
+- **config:** config (src/lib/server/config.ts)
 - **dataplane:** getConfigurationVersion(), getInfo(), getFrontends(), getBackends(), getSslCertificates(), uploadSslCertificate(), replaceSslCertificate(), getDataplaneBaseUrl(), fetchWithAuth(path, options)
 - **audit:** logAction(entry), getAuditLog(options)
 - **stats:** fetchAndParseStats(), writeStatsSnapshot(rows)
-- **db:** getDatabase(), closeDatabase(), setDatabaseOverride(db), schemaStatements, StatsSnapshotRow, AuditLogRow
-- **Frontend:** getBackendUrl(), fetchApi(); Seiten Dashboard, Config, Certificates, Audit
+- **db:** getDatabase(), closeDatabase(), schemaStatements, StatsSnapshotRow, AuditLogRow (better-sqlite3)
+- **UI:** Seiten Dashboard, Config, Certificates, Audit; rufen fetch("/api/...") auf
 
 ---
 

@@ -5,65 +5,100 @@ Web-Interface zur Verwaltung von HAProxy über die offizielle **HAProxy Data Pla
 ## Architektur
 
 - **HAProxy** (mit Data Plane API) – Reverse Proxy, Stats-Frontend auf Port 8404
-- **App** (ein Container: Bun + Elysia + SvelteKit-Build) – Backend-API (Data Plane API-Proxy, Audit-Log, Statistiken, SQLite) und statisches Frontend (Dashboard, Konfiguration, Zertifikate, Audit-Log) auf Port 3000
+- **App** (ein SvelteKit-Projekt, Node + adapter-node) – eine Anwendung: API unter `/api/*`, UI (Dashboard, Konfiguration, Zertifikate, Audit-Log) unter `/`, Port 3001
 
 ## Voraussetzungen
 
-- Docker und Docker Compose
-- Optional: Bun (für lokale Backend-Entwicklung), Node.js (für Frontend)
+- **HAProxy:** immer per Docker (Docker und Docker Compose)
+- **App:** optional mit Docker oder lokal (Node.js 22+)
 
-## Schnellstart
+## Zwei Betriebsarten
+
+### 1. Alles mit Docker
 
 ```bash
 cp .env.example .env
-# Optional: .env anpassen (DPA-Credentials, etc.)
 docker compose up -d
 ```
 
-- **HAProxy:** http://localhost:80, https://localhost:443, Stats http://localhost:8404/stats  
-- **App (Backend + Frontend):** http://localhost:3000 – API unter `/api/*`, Health unter `/health`, Frontend (Dashboard etc.) unter `/`
+- **HAProxy:** http://localhost:80, https://localhost:443, Stats http://localhost:8404/stats
+- **Data Plane API:** Port 5555 (Login **admin** / **adminpwd**)
+- **App:** http://localhost:3001 – UI und API unter `/` bzw. `/api/*`
 
-## Entwicklung
+Die `.env` nutzt dabei die Docker-Namen (`dataplaneapi:5555`, `haproxy:8404`).
 
-### Backend (Bun)
+### 2. Nur HAProxy + DPA in Docker, App lokal (empfohlen für Entwicklung)
+
+HAProxy und Data Plane API laufen in Docker, die App auf deinem Rechner:
 
 ```bash
-cd backend
+# HAProxy + Data Plane API starten (Ports 80, 8404, 5555 auf localhost)
+docker compose up -d
+
+# .env für lokale App (muss auf localhost zeigen)
+# DATAPLANE_API_URL=http://localhost:5555
+# DATAPLANE_API_USER=admin
+# DATAPLANE_API_PASSWORD=adminpwd
 bun install
 bun run dev
-bun test
 ```
 
-Umgebungsvariablen wie in `.env.example` (z. B. `DATAPLANE_API_URL=http://localhost:5555`, wenn HAProxy lokal läuft).
+- **HAProxy:** Port 80, Stats :8404
+- **Data Plane API:** Port **5555** (Login **admin** / **adminpwd**)
+- **App:** http://localhost:5173 (Vite dev) bzw. 3001 (Production)
 
-### Frontend (SvelteKit, nur für lokale Entwicklung)
+**Anmeldung:** Die Data Plane API läuft in einem eigenen Container mit festem Login **admin** / **adminpwd** (Userlist in `haproxy/haproxy.cfg`).
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## Troubleshooting: „API: 502 – fetch failed“
 
-Mit `PUBLIC_BACKEND_URL=http://localhost:3000` (oder leer für Same-Origin, wenn später vom Backend ausgeliefert).
+Wenn die App **http://localhost:5555** nicht erreicht:
 
-## API (Backend)
+1. **HAProxy-Container läuft?**
 
-| Endpoint | Beschreibung |
-|----------|--------------|
-| `GET /health` | Health-Check |
-| `GET /api/info` | Data Plane API Info |
-| `GET /api/frontends` | Frontends (DPA) |
-| `GET /api/backends` | Backends (DPA) |
-| `GET /api/certificates` | SSL-Zertifikate (DPA) |
-| `GET /api/stats` | Live-Statistiken (HAProxy Stats) |
-| `GET /api/stats/snapshot` | Snapshot in DB schreiben |
-| `GET /api/stats/history` | Historie aus SQLite (from, to, limit, offset) |
-| `GET /api/audit` | Audit-Log (from, to, action, resource_type, limit, offset) |
+   ```bash
+   docker compose ps haproxy
+   ```
+
+   Sollte `Up` zeigen. Sonst: `docker compose up -d haproxy`.
+
+2. **Data Plane API erreichbar?**
+
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}" -u admin:adminpwd http://localhost:5555/v3/info
+   ```
+
+   - **200** = OK, dann liegt das Problem an der App (.env, Neustart).
+   - **000** oder „Connection refused“ = Port 5555 nicht erreichbar: Container-Logs prüfen:
+     ```bash
+     docker compose logs haproxy --tail 80
+     ```
+     Wenn die Data Plane API im Container nicht startet (z. B. fehlender Socket), erscheinen Fehler dort.
+
+3. **App lokal:** In `.env` oder `.env.local` muss stehen:
+
+   - `DATAPLANE_API_URL=http://localhost:5555`
+   - Nach Änderung an .env: App neu starten (`npm run dev`).
+
+4. **Schnellprüfung:** `sh scripts/check-haproxy.sh` prüft Container und Erreichbarkeit von localhost:5555.
+
+## API
+
+| Endpoint                                     | Beschreibung                                                                |
+| -------------------------------------------- | --------------------------------------------------------------------------- |
+| `GET /api/health`                            | Health-Check                                                                |
+| `GET /api/info`                              | Data Plane API Info                                                         |
+| `GET /api/frontends`                         | Frontends (DPA)                                                             |
+| `GET /api/backends`                          | Backends (DPA)                                                              |
+| `GET /api/certificates`                      | SSL-Zertifikate (DPA)                                                       |
+| `GET /api/stats`                             | Live-Statistiken (HAProxy Stats)                                            |
+| `GET /api/stats/snapshot`                    | Snapshot in DB schreiben                                                    |
+| `GET /api/stats/history`                     | Historie aus SQLite (from, to, limit, offset)                               |
+| `GET /api/audit`                             | Audit-Log (from, to, action, resource_type, limit, offset)                  |
 | `POST /api/certificates/upload-from-certbot` | Certbot-Hook: JSON `{ pem, storage_name }` oder text/plain + x-storage-name |
 
 ## Dokumentation
 
-- **Implementierungsstand:** [IMPLEMENTATION.md](IMPLEMENTATION.md) – listet alle implementierten Funktionen, Tests und nächste Schritte. Vor Weiterentwicklung lesen, um Doppelungen zu vermeiden und Tests zu nutzen.
+- **Implementierungsstand:** [IMPLEMENTATION.md](IMPLEMENTATION.md) – listet alle implementierten Funktionen und nächste Schritte.
 
 ## Meilensteine (Git-Tags)
 
