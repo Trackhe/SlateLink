@@ -24,8 +24,44 @@ const dpaFetch = async (path: string, query?: Record<string, string>) => {
 	return res.json();
 };
 
+/** Response plus optional Configuration-Version header (für Schreibzugriffe). */
+const dpaFetchWithHeaders = async (path: string) => {
+	const url = new URL(path, dpaBaseUrl);
+	const res = await fetch(url.toString(), {
+		headers: { Authorization: dpaAuthHeader }
+	});
+	if (!res.ok) {
+		const text = await res.text();
+		throw new Error(`DPA ${path}: ${res.status} – ${text || res.statusText}`);
+	}
+	const data = await res.json();
+	const version = res.headers.get('Configuration-Version');
+	return { data, version: version != null ? parseInt(version, 10) : undefined };
+};
+
 export async function getInfo(): Promise<unknown> {
 	return dpaFetch('/v3/info');
+}
+
+/** Aktuelle Konfigurationsversion (für PUT/POST/DELETE mit ?version=). */
+export async function getConfigurationVersion(): Promise<number> {
+	const { version } = await dpaFetchWithHeaders(
+		'/v3/services/haproxy/configuration/version'
+	);
+	if (version === undefined) {
+		throw new Error('DPA: Configuration-Version header missing');
+	}
+	return version;
+}
+
+/** Frontends aus der HAProxy-Konfiguration. */
+export async function getFrontends(): Promise<unknown> {
+	return dpaFetch('/v3/services/haproxy/configuration/frontends');
+}
+
+/** Backends aus der HAProxy-Konfiguration. */
+export async function getBackends(): Promise<unknown> {
+	return dpaFetch('/v3/services/haproxy/configuration/backends');
 }
 
 /** Laufzeit-Statistiken (wie Stats-Seite, aber JSON) – Filter optional. */
