@@ -22,11 +22,11 @@
 
 | Komponente | Datei(en) | Beschreibung |
 |------------|-----------|--------------|
-| Konfiguration | `src/lib/server/config.ts` | Env: DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL. |
+| Konfiguration | `src/lib/server/config.ts` | Env: DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL, STATS_SNAPSHOT_INTERVAL_MS, STATS_RETENTION_DAYS. |
 | Data Plane API Client | `src/lib/server/dataplane.ts` | getConfigurationVersion(), getInfo(), getFrontends(), getBackends(), getSslCertificates(), uploadSslCertificate(), replaceSslCertificate(), getDataplaneBaseUrl(), fetchWithAuth(). |
 | Audit Logger | `src/lib/server/audit.ts` | logAction(entry), getAuditLog(options). |
 | Datenbank | `src/lib/server/db/schema.ts`, `src/lib/server/db/index.ts` | SQLite (better-sqlite3). Tabellen: stats_snapshots, audit_log. getDatabase(), closeDatabase(). |
-| Stats Collector | `src/lib/server/stats.ts` | fetchAndParseStats(), writeStatsSnapshot(rows). |
+| Stats Collector | `src/lib/server/stats.ts` | writeStatsSnapshot(), getStatsHistory(), deleteSnapshotsOlderThanDays(), startStatsSnapshotTimer(). |
 | API-Routen | `src/routes/api/**/+server.ts` | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history, POST /api/certificates/upload-from-certbot. |
 | UI | `src/routes/+layout.svelte`, `+page.svelte`, `config/`, `certificates/`, `audit/` | Layout mit Navigation; Seiten rufen fetch("/api/...") auf (Same-Origin). |
 | Build | `package.json`, `svelte.config.js`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js` | adapter-node, Tailwind 3, Vite 5. |
@@ -37,6 +37,11 @@
 ### M5 – Audit im UI
 
 - Audit-Seite unter `/audit`: Tabelle mit Zeitpunkt, Aktion, Ressource, Details. Nutzt GET /api/audit?limit=50. Filter (from, to, action, resource_type) können später ergänzt werden.
+
+---
+
+| Hooks | `src/hooks.server.ts` | Startet Stats-Snapshot-Timer beim ersten Request. |
+| Tests | `src/lib/server/**/*.test.ts` | Vitest: db, audit, stats, dataplane (17 Tests). `bun run test`. |
 
 ---
 
@@ -81,7 +86,6 @@
 ## 4. Noch nicht umgesetzt
 
 - **Konfiguration schreiben:** Frontend/Backend/Server anlegen/ändern/löschen über DPA (mit Version-Handling und Audit-Log).
-- **Stats-Snapshot-Timer:** Periodisches Schreiben von Snapshots (z. B. alle 1 min) per Timer/Cron; optional Retention (z. B. 30 Tage).
 - **Optional:** Multipart-Upload für Certbot-Hook (aktuell nur JSON/text/plain); API-Key für Hook-Endpoint.
 
 ---
@@ -95,4 +99,4 @@
 
 ---
 
-*Zuletzt aktualisiert: M2–M6 (ohne Certbot-Hook) implementiert, 15 Tests grün.*
+*Zuletzt aktualisiert: M2–M6; Unit-Tests (Vitest, 17 Tests); Stats-Snapshot-Timer + Retention; Komponentendiagramm in README.*
