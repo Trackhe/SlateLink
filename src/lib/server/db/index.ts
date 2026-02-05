@@ -43,3 +43,9 @@ export type AuditLogRow = {
 	resource_id: string | null;
 	details: string | null;
 };
+
+export type StatsSnapshotRow = {
+	id: number;
+	created_at: string;
+	payload: string;
+};
