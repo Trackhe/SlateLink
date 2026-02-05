@@ -17,7 +17,13 @@
     {#if Array.isArray(data.frontends) && data.frontends.length > 0}
       <ul class="list-disc list-inside text-sm text-slate-700">
         {#each data.frontends as f}
-          <li>{typeof f === 'object' && f !== null && 'name' in f ? (f as { name: string }).name : JSON.stringify(f)}</li>
+          <li>
+            {#if typeof f === 'object' && f !== null && 'name' in f}
+              <a href="/config/frontends/{(f as { name: string }).name}" class="text-slate-800 hover:underline">{(f as { name: string }).name}</a>
+            {:else}
+              {JSON.stringify(f)}
+            {/if}
+          </li>
         {/each}
       </ul>
     {:else}
@@ -29,7 +35,13 @@
     {#if Array.isArray(data.backends) && data.backends.length > 0}
       <ul class="list-disc list-inside text-sm text-slate-700">
         {#each data.backends as b}
-          <li>{typeof b === 'object' && b !== null && 'name' in b ? (b as { name: string }).name : JSON.stringify(b)}</li>
+          <li>
+            {#if typeof b === 'object' && b !== null && 'name' in b}
+              <a href="/config/backends/{(b as { name: string }).name}" class="text-slate-800 hover:underline">{(b as { name: string }).name}</a>
+            {:else}
+              {JSON.stringify(b)}
+            {/if}
+          </li>
         {/each}
       </ul>
     {:else}

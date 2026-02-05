@@ -24,6 +24,38 @@ const dpaFetch = async (path: string, query?: Record<string, string>) => {
 	return res.json();
 };
 
+/** POST/PUT/DELETE mit Body und version. */
+const dpaMutate = async (
+	method: 'POST' | 'PUT' | 'DELETE',
+	path: string,
+	body?: unknown
+) => {
+	const version = await getConfigurationVersion();
+	const url = new URL(path, dpaBaseUrl);
+	url.searchParams.set('version', String(version));
+	const res = await fetch(url.toString(), {
+		method,
+		headers: {
+			Authorization: dpaAuthHeader,
+			'Content-Type': 'application/json'
+		},
+		body: body !== undefined ? JSON.stringify(body) : undefined
+	});
+	if (!res.ok) {
+		const text = await res.text();
+		throw new Error(`DPA ${method} ${path}: ${res.status} – ${text || res.statusText}`);
+	}
+	const contentType = res.headers.get('Content-Type');
+	if (contentType?.includes('application/json')) {
+		try {
+			return await res.json();
+		} catch {
+			return undefined;
+		}
+	}
+	return undefined;
+};
+
 /** Response plus optional Configuration-Version header (für Schreibzugriffe). */
 const dpaFetchWithHeaders = async (path: string) => {
 	const url = new URL(path, dpaBaseUrl);
@@ -59,9 +91,73 @@ export async function getFrontends(): Promise<unknown> {
 	return dpaFetch('/v3/services/haproxy/configuration/frontends');
 }
 
+/** Ein Frontend nach Name. */
+export async function getFrontend(name: string): Promise<unknown> {
+	return dpaFetch(
+		`/v3/services/haproxy/configuration/frontends/${encodeURIComponent(name)}`
+	);
+}
+
 /** Backends aus der HAProxy-Konfiguration. */
 export async function getBackends(): Promise<unknown> {
 	return dpaFetch('/v3/services/haproxy/configuration/backends');
+}
+
+/** Ein Backend nach Name. */
+export async function getBackend(name: string): Promise<unknown> {
+	return dpaFetch(
+		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(name)}`
+	);
+}
+
+/** Frontend anlegen (POST). Body: { name, default_backend?, mode?, ... }. */
+export async function createFrontend(body: Record<string, unknown>): Promise<unknown> {
+	return dpaMutate('POST', '/v3/services/haproxy/configuration/frontends', body);
+}
+
+/** Frontend aktualisieren (PUT). */
+export async function updateFrontend(
+	name: string,
+	body: Record<string, unknown>
+): Promise<unknown> {
+	return dpaMutate(
+		'PUT',
+		`/v3/services/haproxy/configuration/frontends/${encodeURIComponent(name)}`,
+		body
+	);
+}
+
+/** Frontend löschen (DELETE). */
+export async function deleteFrontend(name: string): Promise<void> {
+	await dpaMutate(
+		'DELETE',
+		`/v3/services/haproxy/configuration/frontends/${encodeURIComponent(name)}`
+	);
+}
+
+/** Backend anlegen (POST). Body: { name, mode?, ... }. */
+export async function createBackend(body: Record<string, unknown>): Promise<unknown> {
+	return dpaMutate('POST', '/v3/services/haproxy/configuration/backends', body);
+}
+
+/** Backend aktualisieren (PUT). */
+export async function updateBackend(
+	name: string,
+	body: Record<string, unknown>
+): Promise<unknown> {
+	return dpaMutate(
+		'PUT',
+		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(name)}`,
+		body
+	);
+}
+
+/** Backend löschen (DELETE). */
+export async function deleteBackend(name: string): Promise<void> {
+	await dpaMutate(
+		'DELETE',
+		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(name)}`
+	);
 }
 
 /** Laufzeit-Statistiken (wie Stats-Seite, aber JSON) – Filter optional. */
