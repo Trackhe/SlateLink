@@ -23,12 +23,12 @@
 | Komponente | Datei(en) | Beschreibung |
 |------------|-----------|--------------|
 | Konfiguration | `src/lib/server/config.ts` | Env: DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL, STATS_SNAPSHOT_INTERVAL_MS, STATS_RETENTION_DAYS. |
-| Data Plane API Client | `src/lib/server/dataplane.ts` | getInfo(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); frontendNamesUsingBackend(raw, backendName) (für Backend-Löschprüfung); createFrontend/Backend, updateFrontend/Backend, deleteFrontend/Backend; getBinds(), createBind(); getServers(), createServer(); getDefaults(), updateDefaults(); getSslCertificates(), upload/replaceSslCertificate(). |
+| Data Plane API Client | `src/lib/server/dataplane.ts` | getInfo(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); frontendNamesUsingBackend(raw, backendName); usedConfigNames(raw, raw); getAllUsedBindEndpoints(), bindEndpointKey(); createFrontend/Backend, updateFrontend/Backend, deleteFrontend/Backend; getBinds(), createBind(), deleteBind(); getServers(), createServer(), deleteServer(); getDefaults(), updateDefaults(); getSslCertificates(), upload/replaceSslCertificate(). |
 | Audit Logger | `src/lib/server/audit.ts` | logAction(entry), getAuditLog(options). |
 | Datenbank | `src/lib/server/db/schema.ts`, `src/lib/server/db/index.ts` | SQLite (better-sqlite3). Tabellen: stats_snapshots, audit_log. getDatabase(), closeDatabase(). |
 | Stats Collector | `src/lib/server/stats.ts` | writeStatsSnapshot(), getStatsHistory(), deleteSnapshotsOlderThanDays(), startStatsSnapshotTimer(). |
-| API-Routen | `src/routes/api/**/+server.ts` | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history; POST /api/config/backends (Backend + Server-Liste), POST /api/config/frontends (Frontend + default_backend + Bind + Optionen), PUT/DELETE /api/config/backends/[name], /api/config/frontends/[name]. DELETE Backend nur wenn kein Frontend darauf verweist (409 sonst). POST /api/config/proxies (Legacy: alles in einem); POST /api/certificates/upload-from-certbot. |
-| UI | `src/routes/+layout.svelte`, `config/`, `config/backends/new/`, `config/frontends/new/`, `config/backends/[name]/`, `config/frontends/[name]/`, `certificates/`, `audit/` | Config: Liste; „Backend anlegen“ (Name + Server), „Frontend anlegen“ (Name, Backend-Dropdown, Bind, Optionen). Backend-Detail: Löschen nur wenn kein Frontend verweist. |
+| API-Routen | `src/routes/api/**/+server.ts` | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history; POST /api/config/backends, POST /api/config/frontends; PUT/DELETE /api/config/backends/[name], /api/config/frontends/[name]; POST/DELETE /api/config/backends/[name]/servers, /api/config/backends/[name]/servers/[server_name]; POST/DELETE /api/config/frontends/[name]/binds, /api/config/frontends/[name]/binds/[bind_name]. DELETE Backend nur wenn kein Frontend verweist (409). POST /api/config/proxies (Legacy); POST /api/certificates/upload-from-certbot. |
+| UI | `src/routes/+layout.svelte`, `config/`, `config/backends/new/`, `config/frontends/new/`, `config/backends/[name]/`, `config/frontends/[name]/`, `certificates/`, `audit/` | Config: Liste; „Backend anlegen“, „Frontend anlegen“. Backend-Detail: Bearbeiten (Mode, Server hinzufügen/entfernen), Löschen wenn kein Frontend verweist. Frontend-Detail: Bearbeiten (default_backend, Binds hinzufügen/entfernen), Löschen. |
 | Build | `package.json`, `svelte.config.js`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js` | adapter-node, Tailwind 3, Vite 5. |
 | Docker | `Dockerfile` | node:22-alpine, `bun run build`, node build, Port 3001. **Package Manager:** Bun (`bun install`, `bun run dev`, `bun test`). |
 
@@ -41,7 +41,7 @@
 ---
 
 | Hooks | `src/hooks.server.ts` | Startet Stats-Snapshot-Timer beim ersten Request. |
-| Tests | `src/lib/server/**/*.test.ts` | Vitest: db, audit, stats, dataplane (17 Tests). `bun run test`. |
+| Tests | `src/lib/server/**/*.test.ts` | Vitest: db, audit, stats, dataplane (32 Tests). `npm run test` / `bun run test`. |
 
 ---
 
@@ -77,7 +77,7 @@
 | `src/lib/server/db/index.test.ts` | Schema audit_log, stats_snapshots; INSERT/SELECT. DB mit `:memory:` (vi.mock `$env/dynamic/private` → process.env). |
 | `src/lib/server/audit.test.ts` | logAction (id, optionale Felder); getAuditLog (Reihenfolge, Filter action, limit). Nach Test: closeDatabase(). |
 | `src/lib/server/stats.test.ts` | getStatsHistory (leer, mit Daten, limit); deleteSnapshotsOlderThanDays. |
-| `src/lib/server/dataplane.test.ts` | getInfo (200/401); getConfigurationVersion (Header/fehlt); getFrontends, getFrontend(name), getBackends, getBackend(name) (Pfad + Response); frontendNamesUsingBackend (Array, { data }, leer, ohne name). globalThis.fetch mocken. |
+| `src/lib/server/dataplane.test.ts` | getInfo, getConfigurationVersion, getFrontends, getFrontend, getBackends, getBackend; frontendNamesUsingBackend; usedConfigNames; bindEndpointKey; getAllUsedBindEndpoints; deleteBind, deleteServer (Pfad + method). globalThis.fetch mocken. |
 
 **Regel:** Neue Module/Routen zeitnah testen; Test-Doku hier anpassen und mit committen.
 
@@ -85,8 +85,7 @@
 
 ## 4. Noch nicht umgesetzt
 
-- **Optional:** Multipart-Upload für Certbot-Hook (aktuell nur JSON/text/plain); API-Key für Hook-Endpoint.
-- **Optional:** UI für Frontend/Backend bearbeiten (PUT); aktuell: Anlegen getrennt (Backend + Frontend mit Backend-Dropdown), Backend löschen nur wenn kein Frontend verweist.
+- **Optional:** Multipart-Upload für Certbot-Hook; API-Key für Hook-Endpoint.
 
 ---
 
@@ -99,4 +98,4 @@
 
 ---
 
-*Zuletzt aktualisiert: Config getrennt Backend/Frontend anlegen; Backend-Löschprüfung; frontendNamesUsingBackend + Tests; IMPLEMENTATION.md.*
+*Zuletzt aktualisiert: Frontend/Backend bearbeiten (Detail-Seiten: Mode, Server, Binds, default_backend); deleteBind/deleteServer + API + Tests; IMPLEMENTATION.md.*

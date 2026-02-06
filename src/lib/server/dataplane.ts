@@ -110,6 +110,19 @@ export async function getBackend(name: string): Promise<unknown> {
 	);
 }
 
+function toNameList(raw: unknown): string[] {
+	const list = Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? [];
+	return list
+		.filter((x): x is { name?: string } => typeof x === 'object' && x !== null && 'name' in x)
+		.map((x) => (typeof x.name === 'string' ? x.name : ''))
+		.filter(Boolean);
+}
+
+/** Alle Namen, die bereits als Frontend oder Backend existieren (HAProxy: Namen sind global eindeutig). */
+export function usedConfigNames(frontendsRaw: unknown, backendsRaw: unknown): Set<string> {
+	return new Set([...toNameList(frontendsRaw), ...toNameList(backendsRaw)]);
+}
+
 /**
  * Aus der DPA-Frontend-Liste (Array oder { data: [] }) die Namen der Frontends,
  * die auf das angegebene Backend verweisen. Für Backend-Löschprüfung.
@@ -188,6 +201,38 @@ export async function getBinds(frontendName: string): Promise<unknown> {
 	);
 }
 
+/** Eindeutiger Schlüssel für einen Bind (Adresse:Port). */
+export function bindEndpointKey(address: string | undefined, port: number): string {
+	const addr = (address ?? '*').trim() || '*';
+	return `${addr}:${port}`;
+}
+
+function toBindKey(address: string | undefined, port: number): string {
+	return bindEndpointKey(address, port);
+}
+
+function bindKeysFromRaw(raw: unknown): string[] {
+	const list = Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? [];
+	return list
+		.filter((x): x is { address?: string; port?: number } => typeof x === 'object' && x !== null)
+		.map((x) => toBindKey(x.address, Number(x.port)))
+		.filter((k) => k.endsWith(':') === false && !/:\s*NaN$/.test(k));
+}
+
+/** Alle belegten Bind-Endpunkte (address:port) über alle Frontends. Für Eindeutigkeitsprüfung. */
+export async function getAllUsedBindEndpoints(): Promise<Set<string>> {
+	const frontendsRaw = await getFrontends();
+	const nameList = toNameList(frontendsRaw);
+	const keys = new Set<string>();
+	for (const name of nameList) {
+		const bindsRaw = await getBinds(name);
+		for (const k of bindKeysFromRaw(bindsRaw)) {
+			keys.add(k);
+		}
+	}
+	return keys;
+}
+
 /** Bind an Frontend anlegen (POST). Body: { name, address?, port }. */
 export async function createBind(
 	frontendName: string,
@@ -197,6 +242,17 @@ export async function createBind(
 		'POST',
 		`/v3/services/haproxy/configuration/frontends/${encodeURIComponent(frontendName)}/binds`,
 		body
+	);
+}
+
+/** Bind löschen (DELETE). */
+export async function deleteBind(
+	frontendName: string,
+	bindName: string
+): Promise<void> {
+	await dpaMutate(
+		'DELETE',
+		`/v3/services/haproxy/configuration/frontends/${encodeURIComponent(frontendName)}/binds/${encodeURIComponent(bindName)}`
 	);
 }
 
@@ -216,6 +272,17 @@ export async function createServer(
 		'POST',
 		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(backendName)}/servers`,
 		body
+	);
+}
+
+/** Server aus Backend entfernen (DELETE). */
+export async function deleteServer(
+	backendName: string,
+	serverName: string
+): Promise<void> {
+	await dpaMutate(
+		'DELETE',
+		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(backendName)}/servers/${encodeURIComponent(serverName)}`
 	);
 }
 

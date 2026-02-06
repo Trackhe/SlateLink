@@ -7,6 +7,11 @@ import {
 	getBackends,
 	getBackend,
 	frontendNamesUsingBackend,
+	usedConfigNames,
+	bindEndpointKey,
+	getAllUsedBindEndpoints,
+	deleteBind,
+	deleteServer,
 } from "./dataplane";
 
 const mockFetch = vi.fn();
@@ -144,6 +149,108 @@ describe("dataplane", () => {
     it("skips entries without name", () => {
       const list = [{ default_backend: "be1" }];
       expect(frontendNamesUsingBackend(list, "be1")).toEqual([]);
+    });
+  });
+
+  describe("usedConfigNames", () => {
+    it("returns all frontend and backend names", () => {
+      const fronts = [{ name: "fe1" }, { name: "fe2" }];
+      const backs = [{ name: "be1" }];
+      const used = usedConfigNames(fronts, backs);
+      expect(used.has("fe1")).toBe(true);
+      expect(used.has("fe2")).toBe(true);
+      expect(used.has("be1")).toBe(true);
+      expect(used.has("other")).toBe(false);
+    });
+
+    it("handles { data: [] } format", () => {
+      const used = usedConfigNames({ data: [{ name: "www" }] }, []);
+      expect(used.has("www")).toBe(true);
+    });
+
+    it("returns empty set for empty input", () => {
+      expect(usedConfigNames([], []).size).toBe(0);
+      expect(usedConfigNames(null, undefined).size).toBe(0);
+    });
+  });
+
+  describe("bindEndpointKey", () => {
+    it("normalizes address and port to key", () => {
+      expect(bindEndpointKey("*", 80)).toBe("*:80");
+      expect(bindEndpointKey("0.0.0.0", 443)).toBe("0.0.0.0:443");
+      expect(bindEndpointKey(undefined, 8080)).toBe("*:8080");
+      expect(bindEndpointKey("", 80)).toBe("*:80");
+    });
+  });
+
+  describe("getAllUsedBindEndpoints", () => {
+    it("returns used bind keys from all frontends", async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve([{ name: "fe1" }]),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve([{ address: "*", port: 80 }]),
+        });
+      const used = await getAllUsedBindEndpoints();
+      expect(used.has("*:80")).toBe(true);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("returns empty set when no frontends", async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve([]),
+      });
+      const used = await getAllUsedBindEndpoints();
+      expect(used.size).toBe(0);
+    });
+  });
+
+  describe("deleteBind", () => {
+    it("calls DELETE with frontend and bind name", async () => {
+      const headers = new Map([["Configuration-Version", "1"]]);
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          headers,
+          json: () => Promise.resolve({}),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          headers: new Map(),
+          json: () => Promise.resolve(undefined),
+        });
+      await deleteBind("fe1", "bind_80");
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenLastCalledWith(
+        "http://test-dpa:5555/v3/services/haproxy/configuration/frontends/fe1/binds/bind_80?version=1",
+        expect.objectContaining({ method: "DELETE" })
+      );
+    });
+  });
+
+  describe("deleteServer", () => {
+    it("calls DELETE with backend and server name", async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          headers: new Map([["Configuration-Version", "1"]]),
+          json: () => Promise.resolve({}),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          headers: new Map(),
+          json: () => Promise.resolve(undefined),
+        });
+      await deleteServer("be1", "srv1");
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenLastCalledWith(
+        "http://test-dpa:5555/v3/services/haproxy/configuration/backends/be1/servers/srv1?version=1",
+        expect.objectContaining({ method: "DELETE" })
+      );
     });
   });
 });

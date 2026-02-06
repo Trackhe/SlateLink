@@ -127,9 +127,16 @@ Wenn die App **http://localhost:5555** nicht erreicht:
 | `GET /api/stats/snapshot`                    | Snapshot in DB schreiben                                                    |
 | `GET /api/stats/history`                     | Historie aus SQLite (from, to, limit, offset)                               |
 | `GET /api/audit`                             | Audit-Log (from, to, action, resource_type, limit, offset)                  |
-| `POST /api/config/backends`                  | Backend anlegen (name, servers[]); optional Server-Liste                    |
-| `POST /api/config/frontends`                 | Frontend anlegen (name, default_backend, bindPort, options)                  |
+| `POST /api/config/backends`                  | Backend anlegen (name, servers[])                                            |
+| `PUT /api/config/backends/[name]`            | Backend bearbeiten (z. B. mode)                                             |
+| `POST /api/config/backends/[name]/servers`   | Server hinzufügen                                                           |
+| `DELETE /api/config/backends/[name]/servers/[server_name]` | Server entfernen                             |
 | `DELETE /api/config/backends/[name]`         | Backend löschen (409 wenn ein Frontend darauf verweist)                     |
+| `POST /api/config/frontends`                 | Frontend anlegen (name, default_backend, bindPort, options)                 |
+| `PUT /api/config/frontends/[name]`           | Frontend bearbeiten (z. B. default_backend)                                 |
+| `POST /api/config/frontends/[name]/binds`    | Bind hinzufügen (409 wenn Adresse:Port schon vergeben)                      |
+| `DELETE /api/config/frontends/[name]/binds/[bind_name]` | Bind entfernen                               |
+| `DELETE /api/config/frontends/[name]`        | Frontend löschen                                                            |
 | `POST /api/certificates/upload-from-certbot` | Certbot-Hook: JSON `{ pem, storage_name }` oder text/plain + x-storage-name |
 
 ## Dokumentation

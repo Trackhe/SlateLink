@@ -1,8 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { invalidateAll } from '$app/navigation';
 
   export let data: {
     backend: Record<string, unknown> | null;
+    servers: { name?: string; address?: string; port?: number }[];
     frontendsUsingThis: string[];
     canDelete: boolean;
     error: string | null;
@@ -10,6 +12,86 @@
 
   let deleting = false;
   let deleteError = '';
+  let saveError = '';
+  let saving = false;
+  let backendMode = (data.backend?.mode as string) ?? 'http';
+  let addServerName = '';
+  let addServerAddress = '';
+  let addServerPort = 80;
+  let addServerError = '';
+  let adding = false;
+
+  async function saveBackend() {
+    if (!data.backend?.name) return;
+    saving = true;
+    saveError = '';
+    try {
+      const res = await fetch(`/api/config/backends/${encodeURIComponent(String(data.backend.name))}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data.backend,
+          mode: backendMode
+        })
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        saveError = j.error || res.statusText;
+        return;
+      }
+      await invalidateAll();
+    } catch (e) {
+      saveError = e instanceof Error ? e.message : String(e);
+    } finally {
+      saving = false;
+    }
+  }
+
+  async function addServer() {
+    if (!data.backend?.name || !addServerAddress.trim()) {
+      addServerError = 'Adresse ist Pflicht.';
+      return;
+    }
+    adding = true;
+    addServerError = '';
+    try {
+      const res = await fetch(`/api/config/backends/${encodeURIComponent(String(data.backend.name))}/servers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: addServerName.trim() || addServerAddress.replace(/[.:]/g, '_'),
+          address: addServerAddress.trim(),
+          port: addServerPort
+        })
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        addServerError = j.error || res.statusText;
+        return;
+      }
+      addServerName = '';
+      addServerAddress = '';
+      addServerPort = 80;
+      await invalidateAll();
+    } catch (e) {
+      addServerError = e instanceof Error ? e.message : String(e);
+    } finally {
+      adding = false;
+    }
+  }
+
+  async function removeServer(serverName: string) {
+    if (!data.backend?.name || !confirm(`Server „${serverName}“ entfernen?`)) return;
+    try {
+      const res = await fetch(
+        `/api/config/backends/${encodeURIComponent(String(data.backend.name))}/servers/${encodeURIComponent(serverName)}`,
+        { method: 'DELETE' }
+      );
+      if (res.ok) await invalidateAll();
+    } catch {
+      // ignore
+    }
+  }
 
   async function doDelete() {
     if (!data.canDelete || !data.backend?.name) return;
@@ -48,12 +130,79 @@
 {#if data.error}
   <p class="text-red-600 text-sm">{data.error}</p>
 {:else if data.backend}
-  <pre class="text-sm bg-slate-50 border border-slate-200 rounded p-4 overflow-auto mb-4">{JSON.stringify(data.backend, null, 2)}</pre>
+  <section class="mb-6">
+    <h2 class="font-medium text-slate-800 mb-2">Backend bearbeiten</h2>
+    <div class="flex flex-wrap items-end gap-3">
+      <label class="block">
+        <span class="text-sm text-slate-600">Name (nur Anzeige)</span>
+        <input type="text" value={data.backend.name} disabled class="mt-1 block w-48 rounded border border-slate-300 bg-slate-100 px-2 py-1.5 text-sm" />
+      </label>
+      <label class="block">
+        <span class="text-sm text-slate-600">Mode</span>
+        <select bind:value={backendMode} class="mt-1 block rounded border border-slate-300 px-2 py-1.5 text-sm">
+          <option value="http">http</option>
+          <option value="tcp">tcp</option>
+        </select>
+      </label>
+      <button
+        type="button"
+        class="rounded-lg bg-slate-800 text-white px-3 py-2 text-sm hover:bg-slate-700 disabled:opacity-50"
+        disabled={saving}
+        on:click={saveBackend}
+      >
+        {saving ? 'Speichern …' : 'Speichern'}
+      </button>
+    </div>
+    {#if saveError}
+      <p class="text-red-600 text-sm mt-2">{saveError}</p>
+    {/if}
+  </section>
+
+  <section class="mb-6">
+    <h2 class="font-medium text-slate-800 mb-2">Server</h2>
+    {#if data.servers.length > 0}
+      <ul class="border border-slate-200 rounded divide-y divide-slate-200 mb-3">
+        {#each data.servers as srv}
+          {@const srvName = srv.name ?? srv.address ?? ''}
+          <li class="flex items-center justify-between px-3 py-2 text-sm">
+            <span>{srvName}</span>
+            <span class="text-slate-500">{srv.address ?? ''}:{srv.port ?? 80}</span>
+            <button
+              type="button"
+              class="text-slate-500 hover:text-red-600 text-xs"
+              on:click={() => removeServer(String(srvName))}
+              title="Server entfernen"
+            >
+              Entfernen
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {:else}
+      <p class="text-slate-500 text-sm mb-2">Keine Server. Mindestens einen hinzufügen.</p>
+    {/if}
+    <div class="flex flex-wrap gap-2 items-end">
+      <input type="text" bind:value={addServerName} placeholder="Name (optional)" class="w-32 rounded border border-slate-300 px-2 py-1.5 text-sm" />
+      <input type="text" bind:value={addServerAddress} placeholder="Adresse" class="w-48 rounded border border-slate-300 px-2 py-1.5 text-sm" />
+      <input type="number" bind:value={addServerPort} min="1" max="65535" class="w-20 rounded border border-slate-300 px-2 py-1.5 text-sm" />
+      <button
+        type="button"
+        class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
+        disabled={adding}
+        on:click={addServer}
+      >
+        {adding ? 'Hinzufügen …' : 'Server hinzufügen'}
+      </button>
+    </div>
+    {#if addServerError}
+      <p class="text-red-600 text-sm mt-2">{addServerError}</p>
+    {/if}
+  </section>
 
   {#if data.frontendsUsingThis.length > 0}
     <p class="text-amber-700 text-sm mb-2">
       Dieses Backend kann nicht gelöscht werden: folgende Frontends verweisen darauf:
-      <strong>{data.frontendsUsingThis.join(', ')}</strong>. Entferne zuerst die Frontends oder weise ihnen ein anderes Backend zu.
+      <strong>{data.frontendsUsingThis.join(', ')}</strong>.
     </p>
   {:else}
     {#if deleteError}
