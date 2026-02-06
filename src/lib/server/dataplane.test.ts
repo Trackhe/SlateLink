@@ -6,6 +6,7 @@ import {
 	getFrontend,
 	getBackends,
 	getBackend,
+	frontendNamesUsingBackend,
 } from "./dataplane";
 
 const mockFetch = vi.fn();
@@ -110,5 +111,39 @@ describe("dataplane", () => {
       "http://test-dpa:5555/v3/services/haproxy/configuration/backends/default_fallback",
       expect.any(Object)
     );
+  });
+
+  describe("frontendNamesUsingBackend", () => {
+    it("returns names when frontends is array", () => {
+      const list = [
+        { name: "fe1", default_backend: "be1" },
+        { name: "fe2", default_backend: "be2" },
+        { name: "fe3", default_backend: "be1" },
+      ];
+      expect(frontendNamesUsingBackend(list, "be1")).toEqual(["fe1", "fe3"]);
+      expect(frontendNamesUsingBackend(list, "be2")).toEqual(["fe2"]);
+      expect(frontendNamesUsingBackend(list, "be3")).toEqual([]);
+    });
+
+    it("returns names when frontends is { data: [] }", () => {
+      const raw = {
+        data: [
+          { name: "www", default_backend: "webservers" },
+        ],
+      };
+      expect(frontendNamesUsingBackend(raw, "webservers")).toEqual(["www"]);
+      expect(frontendNamesUsingBackend(raw, "other")).toEqual([]);
+    });
+
+    it("returns [] for invalid or empty input", () => {
+      expect(frontendNamesUsingBackend(null, "be")).toEqual([]);
+      expect(frontendNamesUsingBackend(undefined, "be")).toEqual([]);
+      expect(frontendNamesUsingBackend([], "be")).toEqual([]);
+    });
+
+    it("skips entries without name", () => {
+      const list = [{ default_backend: "be1" }];
+      expect(frontendNamesUsingBackend(list, "be1")).toEqual([]);
+    });
   });
 });

@@ -110,6 +110,27 @@ export async function getBackend(name: string): Promise<unknown> {
 	);
 }
 
+/**
+ * Aus der DPA-Frontend-Liste (Array oder { data: [] }) die Namen der Frontends,
+ * die auf das angegebene Backend verweisen. Für Backend-Löschprüfung.
+ */
+export function frontendNamesUsingBackend(
+	frontendsRaw: unknown,
+	backendName: string
+): string[] {
+	const list = Array.isArray(frontendsRaw)
+		? frontendsRaw
+		: (frontendsRaw as { data?: unknown[] })?.data ?? [];
+	return list
+		.filter(
+			(f): f is { name?: string; default_backend?: string } =>
+				typeof f === 'object' && f !== null && 'default_backend' in f
+		)
+		.filter((f) => f.default_backend === backendName)
+		.map((f) => (typeof f.name === 'string' ? f.name : ''))
+		.filter(Boolean);
+}
+
 /** Frontend anlegen (POST). Body: { name, default_backend?, mode?, ... }. */
 export async function createFrontend(body: Record<string, unknown>): Promise<unknown> {
 	return dpaMutate('POST', '/v3/services/haproxy/configuration/frontends', body);
@@ -157,6 +178,61 @@ export async function deleteBackend(name: string): Promise<void> {
 	await dpaMutate(
 		'DELETE',
 		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(name)}`
+	);
+}
+
+/** Binds eines Frontends (GET). */
+export async function getBinds(frontendName: string): Promise<unknown> {
+	return dpaFetch(
+		`/v3/services/haproxy/configuration/frontends/${encodeURIComponent(frontendName)}/binds`
+	);
+}
+
+/** Bind an Frontend anlegen (POST). Body: { name, address?, port }. */
+export async function createBind(
+	frontendName: string,
+	body: Record<string, unknown>
+): Promise<unknown> {
+	return dpaMutate(
+		'POST',
+		`/v3/services/haproxy/configuration/frontends/${encodeURIComponent(frontendName)}/binds`,
+		body
+	);
+}
+
+/** Server eines Backends (GET). */
+export async function getServers(backendName: string): Promise<unknown> {
+	return dpaFetch(
+		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(backendName)}/servers`
+	);
+}
+
+/** Server an Backend anlegen (POST). Body: { name, address, port?, check?, ... }. */
+export async function createServer(
+	backendName: string,
+	body: Record<string, unknown>
+): Promise<unknown> {
+	return dpaMutate(
+		'POST',
+		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(backendName)}/servers`,
+		body
+	);
+}
+
+/** Defaults-Sektionen (GET). Rückgabe: Array mit { name, forwardfor?, client_timeout?, ... }. */
+export async function getDefaults(): Promise<unknown> {
+	return dpaFetch('/v3/services/haproxy/configuration/defaults');
+}
+
+/** Defaults-Sektion ersetzen (PUT). Für option forwardfor, timeouts (WebSocket) etc. */
+export async function updateDefaults(
+	defaultsName: string,
+	body: Record<string, unknown>
+): Promise<unknown> {
+	return dpaMutate(
+		'PUT',
+		`/v3/services/haproxy/configuration/defaults/${encodeURIComponent(defaultsName)}`,
+		body
 	);
 }
 

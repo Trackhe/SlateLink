@@ -8,7 +8,11 @@
 </script>
 
 <h1 class="text-2xl font-semibold mb-2">Config</h1>
-<p class="text-slate-600 mb-4">Frontends & Backends aus der HAProxy-Konfiguration (Data Plane API).</p>
+<p class="text-slate-600 mb-4">Frontends & Backends aus der HAProxy-Konfiguration (Data Plane API). Backends zuerst anlegen, dann Frontends mit Backend-Auswahl.</p>
+<p class="mb-4 flex flex-wrap gap-2">
+  <a href="/config/backends/new" class="inline-flex items-center rounded-lg bg-slate-800 text-white px-3 py-2 text-sm font-medium hover:bg-slate-700">+ Backend anlegen</a>
+  <a href="/config/frontends/new" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">+ Frontend anlegen</a>
+</p>
 
 {#if data.error}
   <p class="text-red-600 text-sm">Fehler: {data.error}</p>

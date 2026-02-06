@@ -1,6 +1,11 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { updateBackend, deleteBackend } from '$lib/server/dataplane';
+import {
+	updateBackend,
+	deleteBackend,
+	getFrontends,
+	frontendNamesUsingBackend
+} from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
 
 export const PUT: RequestHandler = async ({ params, request }) => {
@@ -25,6 +30,17 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 export const DELETE: RequestHandler = async ({ params }) => {
 	try {
+		const frontendsRaw = await getFrontends();
+		const using = frontendNamesUsingBackend(frontendsRaw, params.name);
+		if (using.length > 0) {
+			return json(
+				{
+					error: 'Backend kann nicht gelöscht werden: mindestens ein Frontend verweist darauf.',
+					frontends: using
+				},
+				{ status: 409 }
+			);
+		}
 		await deleteBackend(params.name);
 		logAction({
 			action: 'backend_deleted',

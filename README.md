@@ -127,6 +127,9 @@ Wenn die App **http://localhost:5555** nicht erreicht:
 | `GET /api/stats/snapshot`                    | Snapshot in DB schreiben                                                    |
 | `GET /api/stats/history`                     | Historie aus SQLite (from, to, limit, offset)                               |
 | `GET /api/audit`                             | Audit-Log (from, to, action, resource_type, limit, offset)                  |
+| `POST /api/config/backends`                  | Backend anlegen (name, servers[]); optional Server-Liste                    |
+| `POST /api/config/frontends`                 | Frontend anlegen (name, default_backend, bindPort, options)                  |
+| `DELETE /api/config/backends/[name]`         | Backend löschen (409 wenn ein Frontend darauf verweist)                     |
 | `POST /api/certificates/upload-from-certbot` | Certbot-Hook: JSON `{ pem, storage_name }` oder text/plain + x-storage-name |
 
 ## Dokumentation
