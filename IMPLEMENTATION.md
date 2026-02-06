@@ -23,12 +23,12 @@
 | Komponente | Datei(en) | Beschreibung |
 |------------|-----------|--------------|
 | Konfiguration | `src/lib/server/config.ts` | Env: DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL, STATS_SNAPSHOT_INTERVAL_MS, STATS_RETENTION_DAYS. |
-| Data Plane API Client | `src/lib/server/dataplane.ts` | getInfo(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); frontendNamesUsingBackend(raw, backendName); usedConfigNames(raw, raw); getAllUsedBindEndpoints(), bindEndpointKey(); createFrontend/Backend, updateFrontend/Backend, deleteFrontend/Backend; getBinds(), createBind(), deleteBind(); getServers(), createServer(), deleteServer(); getDefaults(), updateDefaults(); getSslCertificates(), upload/replaceSslCertificate(). |
+| Data Plane API Client | `src/lib/server/dataplane.ts` | getInfo(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); frontendNamesUsingBackend(raw, backendName); usedConfigNames(raw, raw); getAllUsedBindEndpoints(), bindEndpointKey(); createFrontend/Backend, updateFrontend/Backend, deleteFrontend/Backend; getBinds(), createBind(), deleteBind(); getServers(), createServer(), updateServer(), deleteServer(); getDefaults(), updateDefaults(); getSslCertificates(), upload/replaceSslCertificate(). createServer: Default check: 'disabled'. |
 | Audit Logger | `src/lib/server/audit.ts` | logAction(entry), getAuditLog(options). |
 | Datenbank | `src/lib/server/db/schema.ts`, `src/lib/server/db/index.ts` | SQLite (better-sqlite3). Tabellen: stats_snapshots, audit_log. getDatabase(), closeDatabase(). |
 | Stats Collector | `src/lib/server/stats.ts` | writeStatsSnapshot(), getStatsHistory(), deleteSnapshotsOlderThanDays(), startStatsSnapshotTimer(). |
-| API-Routen | `src/routes/api/**/+server.ts` | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history; POST /api/config/backends, POST /api/config/frontends; PUT/DELETE /api/config/backends/[name], /api/config/frontends/[name]; POST/DELETE /api/config/backends/[name]/servers, /api/config/backends/[name]/servers/[server_name]; POST/DELETE /api/config/frontends/[name]/binds, /api/config/frontends/[name]/binds/[bind_name]. DELETE Backend nur wenn kein Frontend verweist (409). POST /api/config/proxies (Legacy); POST /api/certificates/upload-from-certbot. |
-| UI | `src/routes/+layout.svelte`, `config/`, `config/backends/new/`, `config/frontends/new/`, `config/backends/[name]/`, `config/frontends/[name]/`, `certificates/`, `audit/` | Config: Liste; „Backend anlegen“, „Frontend anlegen“. Backend-Detail: Bearbeiten (Mode, Server hinzufügen/entfernen), Löschen wenn kein Frontend verweist. Frontend-Detail: Bearbeiten (default_backend, Binds hinzufügen/entfernen), Löschen. |
+| API-Routen | `src/routes/api/**/+server.ts` | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history; POST /api/config/backends, POST /api/config/frontends; PUT/DELETE /api/config/backends/[name], /api/config/frontends/[name]; POST/PUT/DELETE /api/config/backends/[name]/servers, /api/config/backends/[name]/servers/[server_name] (PUT z. B. { "check": "disabled" }); POST/DELETE /api/config/frontends/[name]/binds, /api/config/frontends/[name]/binds/[bind_name]. DELETE Backend nur wenn kein Frontend verweist (409). POST /api/config/proxies (Legacy); POST /api/certificates/upload-from-certbot. |
+| UI | `src/routes/+layout.svelte`, `config/`, `config/backends/new/`, `config/frontends/new/`, `config/backends/[name]/`, `config/frontends/[name]/`, `certificates/`, `audit/` | Config: Liste; „Backend anlegen“, „Frontend anlegen“. Backend-Detail: Bearbeiten (Mode, Server hinzufügen/entfernen), pro Server „Check deaktivieren“, Löschen wenn kein Frontend verweist. Frontend-Detail: Bearbeiten (default_backend, Binds hinzufügen/entfernen), Löschen. |
 | Build | `package.json`, `svelte.config.js`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js` | adapter-node, Tailwind 3, Vite 5. |
 | Docker | `Dockerfile` | node:22-alpine, `bun run build`, node build, Port 3001. **Package Manager:** Bun (`bun install`, `bun run dev`, `bun test`). |
 
@@ -59,7 +59,7 @@
 ## 2. Implementierte Funktionen (Übersicht)
 
 - **config:** config (src/lib/server/config.ts)
-- **dataplane:** getInfo(), getConfigurationVersion(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); createFrontend/Backend(), updateFrontend/Backend(), deleteFrontend/Backend(); getSslCertificates(), upload/replaceSslCertificate()
+- **dataplane:** getInfo(), getConfigurationVersion(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); createFrontend/Backend(), updateFrontend/Backend(), deleteFrontend/Backend(); getServers(), createServer(), updateServer(), deleteServer(); getBinds(), createBind(), deleteBind(); getSslCertificates(), upload/replaceSslCertificate()
 - **audit:** logAction(entry), getAuditLog(options)
 - **stats:** writeStatsSnapshot(), getStatsHistory(), deleteSnapshotsOlderThanDays(), startStatsSnapshotTimer()
 - **db:** getDatabase(), closeDatabase(), schemaStatements, AuditLogRow, StatsSnapshotRow (better-sqlite3)
@@ -98,4 +98,4 @@
 
 ---
 
-*Zuletzt aktualisiert: Frontend/Backend bearbeiten (Detail-Seiten: Mode, Server, Binds, default_backend); deleteBind/deleteServer + API + Tests; IMPLEMENTATION.md.*
+*Zuletzt aktualisiert: PUT Server (check: disabled), Backend-Detail „Check deaktivieren“; updateServer in dataplane; IMPLEMENTATION.md.*

@@ -124,31 +124,50 @@
         {/if}
       {/if}
     {:else}
-      <div class="overflow-x-auto rounded-lg border border-slate-200">
-        <table class="min-w-full text-sm text-left">
-          <thead class="bg-slate-100 text-slate-700">
-            <tr>
-              <th class="px-3 py-2 font-medium">Typ</th>
-              <th class="px-3 py-2 font-medium">Name / Service</th>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        {#each statsRows as row}
+          {@const type = getType(row)}
+          {@const status = getVal(row, 'status')}
+          <article
+            class="rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow p-4"
+          >
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <span
+                class="text-xs font-medium px-2 py-0.5 rounded-full {type === 'frontend'
+                  ? 'bg-blue-100 text-blue-800'
+                  : type === 'backend'
+                    ? 'bg-violet-100 text-violet-800'
+                    : 'bg-slate-100 text-slate-700'}"
+              >
+                {type}
+              </span>
+              {#if status && status !== '–'}
+                <span
+                  class="text-xs font-medium {status === 'OPEN' || status === 'UP'
+                    ? 'text-emerald-600'
+                    : status === 'DOWN' || status === 'MAINT'
+                      ? 'text-red-600'
+                      : 'text-slate-500'}"
+                >
+                  {status}
+                </span>
+              {/if}
+            </div>
+            <h3 class="font-semibold text-slate-800 truncate mb-3" title={getDisplayName(row)}>
+              {getDisplayName(row)}
+            </h3>
+            <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate-600">
               {#each metricKeys as key}
-                <th class="px-3 py-2 font-medium">{getLabel(key)}</th>
+                {#if key !== 'status'}
+                  <dt class="text-slate-500">{getLabel(key)}</dt>
+                  <dd class="tabular-nums text-right">{getVal(row, key)}</dd>
+                {/if}
               {/each}
-            </tr>
-          </thead>
-          <tbody>
-            {#each statsRows as row}
-              <tr class="border-t border-slate-100 hover:bg-slate-50">
-                <td class="px-3 py-2 text-slate-600">{getType(row)}</td>
-                <td class="px-3 py-2 font-medium text-slate-800">{getDisplayName(row)}</td>
-                {#each metricKeys as key}
-                  <td class="px-3 py-2 tabular-nums">{getVal(row, key)}</td>
-                {/each}
-              </tr>
-            {/each}
-          </tbody>
-        </table>
+            </dl>
+          </article>
+        {/each}
       </div>
-      <p class="text-slate-500 text-xs mt-2">Wenn die App über HAProxy erreichbar ist, erscheinen hier die Frontends/Backends inkl. Requests und Sessions.</p>
+      <p class="text-slate-500 text-xs mt-3">Wenn die App über HAProxy erreichbar ist, erscheinen hier die Frontends/Backends inkl. Requests und Sessions.</p>
     {/if}
   </section>
 {:else}

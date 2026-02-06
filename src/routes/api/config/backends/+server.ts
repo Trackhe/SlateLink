@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { createBackend, createServer } from '$lib/server/dataplane';
+import { createBackend, createServer, getFrontends, getBackends, usedConfigNames } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
 
 type ServerInput = { name?: string; address: string; port?: number };
@@ -15,6 +15,13 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 		const name = String(body.name).trim();
+		const [frontendsRaw, backendsRaw] = await Promise.all([getFrontends(), getBackends()]);
+		if (usedConfigNames(frontendsRaw, backendsRaw).has(name)) {
+			return json(
+				{ error: 'Name bereits vergeben (Frontend oder Backend). Namen müssen eindeutig sein.' },
+				{ status: 409 }
+			);
+		}
 		await createBackend({
 			name,
 			mode: body.mode ?? 'http',

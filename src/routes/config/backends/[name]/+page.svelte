@@ -4,7 +4,7 @@
 
   export let data: {
     backend: Record<string, unknown> | null;
-    servers: { name?: string; address?: string; port?: number }[];
+    servers: { name?: string; address?: string; port?: number; check?: string }[];
     frontendsUsingThis: string[];
     canDelete: boolean;
     error: string | null;
@@ -20,6 +20,35 @@
   let addServerPort = 80;
   let addServerError = '';
   let adding = false;
+  let disablingCheck: string | null = null;
+  let disableCheckError = '';
+
+  async function disableCheck(srv: (typeof data.servers)[number]) {
+    const name = String(srv.name ?? '');
+    if (!data.backend?.name || !name) return;
+    disablingCheck = name;
+    disableCheckError = '';
+    try {
+      const res = await fetch(
+        `/api/config/backends/${encodeURIComponent(String(data.backend.name))}/servers/${encodeURIComponent(name)}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ check: 'disabled' })
+        }
+      );
+      if (res.ok) {
+        await invalidateAll();
+      } else {
+        const j = await res.json().catch(() => ({}));
+        disableCheckError = j.error || res.statusText;
+      }
+    } catch (e) {
+      disableCheckError = e instanceof Error ? e.message : String(e);
+    } finally {
+      disablingCheck = null;
+    }
+  }
 
   async function saveBackend() {
     if (!data.backend?.name) return;
@@ -160,21 +189,37 @@
 
   <section class="mb-6">
     <h2 class="font-medium text-slate-800 mb-2">Server</h2>
+    {#if disableCheckError}
+      <p class="text-red-600 text-sm mb-2">{disableCheckError}</p>
+    {/if}
     {#if data.servers.length > 0}
       <ul class="border border-slate-200 rounded divide-y divide-slate-200 mb-3">
         {#each data.servers as srv}
           {@const srvName = srv.name ?? srv.address ?? ''}
-          <li class="flex items-center justify-between px-3 py-2 text-sm">
+          <li class="flex items-center justify-between gap-2 px-3 py-2 text-sm">
             <span>{srvName}</span>
             <span class="text-slate-500">{srv.address ?? ''}:{srv.port ?? 80}</span>
-            <button
-              type="button"
-              class="text-slate-500 hover:text-red-600 text-xs"
-              on:click={() => removeServer(String(srvName))}
-              title="Server entfernen"
-            >
-              Entfernen
-            </button>
+            <span class="flex gap-1">
+              {#if srv.check !== 'disabled'}
+                <button
+                  type="button"
+                  class="text-amber-700 hover:text-amber-800 text-xs"
+                  on:click={() => disableCheck(srv)}
+                  disabled={disablingCheck === String(srvName)}
+                  title="Health-Check deaktivieren (Server sonst DOWN bei fehlgeschlagenem Check)"
+                >
+                  {disablingCheck === String(srvName) ? '…' : 'Check deaktivieren'}
+                </button>
+              {/if}
+              <button
+                type="button"
+                class="text-slate-500 hover:text-red-600 text-xs"
+                on:click={() => removeServer(String(srvName))}
+                title="Server entfernen"
+              >
+                Entfernen
+              </button>
+            </span>
           </li>
         {/each}
       </ul>

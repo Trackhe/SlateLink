@@ -4,7 +4,12 @@ import {
 	createFrontend,
 	createBind,
 	getDefaults,
-	updateDefaults
+	updateDefaults,
+	getFrontends,
+	getBackends,
+	usedConfigNames,
+	getAllUsedBindEndpoints,
+	bindEndpointKey
 } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
 
@@ -32,8 +37,25 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 		const name = String(body.name).trim();
 		const default_backend = String(body.default_backend).trim();
+		const [frontendsRaw, backendsRaw] = await Promise.all([getFrontends(), getBackends()]);
+		if (usedConfigNames(frontendsRaw, backendsRaw).has(name)) {
+			return json(
+				{ error: 'Name bereits vergeben (Frontend oder Backend). Namen müssen eindeutig sein.' },
+				{ status: 409 }
+			);
+		}
 		const bindPort = Number(body.bindPort);
 		const bindAddress = (body.bindAddress ?? '*').trim();
+		if (Number.isInteger(bindPort) && bindPort >= 1 && bindPort <= 65535) {
+			const usedBinds = await getAllUsedBindEndpoints();
+			const newKey = bindEndpointKey(bindAddress, bindPort);
+			if (usedBinds.has(newKey)) {
+				return json(
+					{ error: `Bind-Adresse ${bindAddress}:${bindPort} ist bereits vergeben. Jeder Listen-Endpunkt (Adresse:Port) darf nur einmal vorkommen.` },
+					{ status: 409 }
+				);
+			}
+		}
 		const bindName = body.bindName ?? `bind_${Number.isInteger(bindPort) && bindPort > 0 ? bindPort : 80}`;
 		const options = body.options ?? {};
 

@@ -17,30 +17,40 @@
 {#if data.error}
   <p class="text-red-600 text-sm">Fehler: {data.error}</p>
 {:else}
-  <section class="mb-6">
-    <h2 class="font-medium mb-2">Frontends</h2>
+  <section class="mb-8">
+    <h2 class="font-medium text-slate-800 mb-3">Frontends</h2>
     {#if Array.isArray(data.frontends) && data.frontends.length > 0}
-      <ul class="list-disc list-inside text-sm text-slate-700">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {#each data.frontends as f}
-          <li>
-            <a href="/config/frontends/{f.name}" class="text-slate-800 hover:underline">{f.name}</a>
-          </li>
+          <a
+            href="/config/frontends/{f.name}"
+            class="block rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-blue-200 transition-all p-4 group"
+          >
+            <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">frontend</span>
+            <h3 class="font-semibold text-slate-800 mt-2 group-hover:text-blue-700 truncate">{f.name}</h3>
+            <p class="text-slate-500 text-xs mt-1">Details & Bearbeiten →</p>
+          </a>
         {/each}
-      </ul>
+      </div>
     {:else}
       <p class="text-slate-500 text-sm">Keine Frontends.</p>
     {/if}
   </section>
   <section>
-    <h2 class="font-medium mb-2">Backends</h2>
+    <h2 class="font-medium text-slate-800 mb-3">Backends</h2>
     {#if Array.isArray(data.backends) && data.backends.length > 0}
-      <ul class="list-disc list-inside text-sm text-slate-700">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {#each data.backends as b}
-          <li>
-            <a href="/config/backends/{b.name}" class="text-slate-800 hover:underline">{b.name}</a>
-          </li>
+          <a
+            href="/config/backends/{b.name}"
+            class="block rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-violet-200 transition-all p-4 group"
+          >
+            <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-100 text-violet-800">backend</span>
+            <h3 class="font-semibold text-slate-800 mt-2 group-hover:text-violet-700 truncate">{b.name}</h3>
+            <p class="text-slate-500 text-xs mt-1">Details & Bearbeiten →</p>
+          </a>
         {/each}
-      </ul>
+      </div>
     {:else}
       <p class="text-slate-500 text-sm">Keine Backends.</p>
     {/if}

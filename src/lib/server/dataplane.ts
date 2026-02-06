@@ -263,14 +263,39 @@ export async function getServers(backendName: string): Promise<unknown> {
 	);
 }
 
-/** Server an Backend anlegen (POST). Body: { name, address, port?, check?, ... }. */
+/** Einzelnen Server per Name (GET). Für PUT-Merge (z. B. check: disabled). */
+export async function getServer(
+	backendName: string,
+	serverName: string
+): Promise<unknown> {
+	return dpaFetch(
+		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(backendName)}/servers/${encodeURIComponent(serverName)}`
+	);
+}
+
+/** Server an Backend anlegen (POST). Body: { name, address, port?, check?, ... }. Ohne check = DPA setzt ggf. Check; check: "disabled" = kein Health-Check. */
 export async function createServer(
 	backendName: string,
 	body: Record<string, unknown>
 ): Promise<unknown> {
+	const payload = { ...body };
+	if (payload.check === undefined) payload.check = 'disabled';
 	return dpaMutate(
 		'POST',
 		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(backendName)}/servers`,
+		payload
+	);
+}
+
+/** Server im Backend aktualisieren (PUT). Z. B. check: "disabled" um Health-Check auszuschalten. */
+export async function updateServer(
+	backendName: string,
+	serverName: string,
+	body: Record<string, unknown>
+): Promise<unknown> {
+	return dpaMutate(
+		'PUT',
+		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(backendName)}/servers/${encodeURIComponent(serverName)}`,
 		body
 	);
 }
