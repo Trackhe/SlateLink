@@ -1,12 +1,65 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import { invalidateAll } from '$app/navigation';
+
   /** From +page.server.ts load() */
-  export let data: { data: Record<string, unknown> | null; error: string | null };
+  export let data: {
+    data: Record<string, unknown> | null;
+    stats: unknown;
+    error: string | null;
+    statsError: string | null;
+    rawStats?: unknown;
+  };
   let showRaw = false;
+  let showStatsDebug = false;
+
+  const LIVE_REFRESH_MS = 5000;
+
+  onMount(() => {
+    const t = setInterval(() => invalidateAll(), LIVE_REFRESH_MS);
+    return () => clearInterval(t);
+  });
+
+  /** Nach Normalisierung: Array mit { type, name, req_tot, scur, bin, bout, status, … } */
+  const statsRows = Array.isArray(data.stats) ? data.stats : [];
+  const metricKeys = ['req_tot', 'scur', 'stot', 'bin', 'bout', 'hrsp_2xx', 'hrsp_4xx', 'hrsp_5xx', 'status'];
+  function getLabel(key: string): string {
+    const labels: Record<string, string> = {
+      req_tot: 'Requests',
+      scur: 'Sessions',
+      stot: 'Conn total',
+      bin: 'Bytes in',
+      bout: 'Bytes out',
+      hrsp_2xx: '2xx',
+      hrsp_4xx: '4xx',
+      hrsp_5xx: '5xx',
+      status: 'Status'
+    };
+    return labels[key] ?? key;
+  }
+  function getVal(row: unknown, key: string): string {
+    if (row === null || typeof row !== 'object') return '–';
+    const r = row as Record<string, unknown>;
+    const v = r[key];
+    if (v === undefined || v === null) return '–';
+    if (typeof v === 'number') return String(v);
+    return String(v);
+  }
+  function getDisplayName(row: unknown): string {
+    if (row === null || typeof row !== 'object') return '–';
+    const r = row as Record<string, unknown>;
+    return String(r.name ?? r.pxname ?? r.svname ?? '–');
+  }
+  function getType(row: unknown): string {
+    if (row === null || typeof row !== 'object') return '–';
+    return String((row as Record<string, unknown>).type ?? '–');
+  }
 </script>
 
 <h1 class="text-2xl font-semibold mb-2">SlateLink</h1>
 <p class="text-slate-600 mb-6">
-  Willkommen. Anbindung an die HAProxy Data Plane API (Control Plane).
+  Willkommen. Anbindung an die HAProxy Data Plane API (Control Plane). Statistiken unten zeigen den aktuellen Laufzeitstand von Frontends, Backends und Servern.
+  <span class="block mt-2 text-slate-500 text-sm">Du musst diese App (SlateLink) aufrufen, z. B. <code class="bg-slate-100 px-1 rounded">http://localhost:3001</code>. Wenn du nur über HAProxy (z. B. localhost:80) gehst und dort ein anderer Dienst (z. B. Port 3000) hängt, siehst du dort nicht dieses Dashboard.</span>
 </p>
 
 {#if data.error}
@@ -21,7 +74,7 @@
     </p>
   </div>
 {:else if data.data}
-  <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+  <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4 mb-6">
     <div class="flex items-center gap-2 mb-3">
       <span class="inline-flex h-3 w-3 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true"></span>
       <span class="font-medium text-emerald-800">Control Plane erreichbar</span>
@@ -47,6 +100,57 @@
       <pre class="mt-2 text-xs overflow-auto rounded bg-white/60 p-3 border border-emerald-100">{JSON.stringify(data.data, null, 2)}</pre>
     {/if}
   </div>
+
+  <section class="mb-6">
+    <h2 class="text-lg font-medium text-slate-800 mb-2">
+      HAProxy-Statistiken (Live)
+      <span class="text-slate-500 font-normal text-sm">– Aktualisierung alle {LIVE_REFRESH_MS / 1000} s</span>
+    </h2>
+    {#if data.statsError}
+      <p class="text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded-lg p-3">Statistiken nicht verfügbar: {data.statsError}</p>
+      <p class="text-slate-600 text-xs mt-2">Prüfe: Data Plane API läuft (z. B. im HAProxy-Container), <code class="bg-slate-100 px-1 rounded">DATAPLANE_API_URL</code> in .env zeigt auf die DPA (z. B. http://localhost:5555).</p>
+    {:else if statsRows.length === 0}
+      <p class="text-slate-500 text-sm">Keine Statistik-Einträge (DPA /stats/native lieferte leeres oder anderes Format).</p>
+      {#if data.rawStats != null}
+        <button
+          type="button"
+          class="mt-2 text-sm text-slate-600 hover:text-slate-800 underline"
+          on:click={() => (showStatsDebug = !showStatsDebug)}
+        >
+          {showStatsDebug ? 'Roh-Antwort ausblenden' : 'Roh-Antwort der DPA anzeigen'}
+        </button>
+        {#if showStatsDebug}
+          <pre class="mt-2 text-xs overflow-auto rounded bg-slate-100 p-3 border border-slate-200 max-h-64">{JSON.stringify(data.rawStats, null, 2)}</pre>
+        {/if}
+      {/if}
+    {:else}
+      <div class="overflow-x-auto rounded-lg border border-slate-200">
+        <table class="min-w-full text-sm text-left">
+          <thead class="bg-slate-100 text-slate-700">
+            <tr>
+              <th class="px-3 py-2 font-medium">Typ</th>
+              <th class="px-3 py-2 font-medium">Name / Service</th>
+              {#each metricKeys as key}
+                <th class="px-3 py-2 font-medium">{getLabel(key)}</th>
+              {/each}
+            </tr>
+          </thead>
+          <tbody>
+            {#each statsRows as row}
+              <tr class="border-t border-slate-100 hover:bg-slate-50">
+                <td class="px-3 py-2 text-slate-600">{getType(row)}</td>
+                <td class="px-3 py-2 font-medium text-slate-800">{getDisplayName(row)}</td>
+                {#each metricKeys as key}
+                  <td class="px-3 py-2 tabular-nums">{getVal(row, key)}</td>
+                {/each}
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-slate-500 text-xs mt-2">Wenn die App über HAProxy erreichbar ist, erscheinen hier die Frontends/Backends inkl. Requests und Sessions.</p>
+    {/if}
+  </section>
 {:else}
   <div class="rounded-lg border border-slate-200 bg-slate-50 p-4 flex items-center gap-2">
     <span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600"></span>

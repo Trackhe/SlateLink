@@ -72,6 +72,16 @@ bun run dev
 
 **Anmeldung:** Die Data Plane API läuft in einem eigenen Container mit festem Login **admin** / **adminpwd** (Userlist in `haproxy/haproxy.cfg`).
 
+### 3. App über HAProxy aufrufen (Statistiken im Dashboard)
+
+Du kannst die App hinter HAProxy hängen und dann im **Dashboard** die Live-Statistiken sehen: Requests, Sessions, Bytes pro Frontend/Backend.
+
+1. In `haproxy.cfg` ein Frontend (z. B. Port 80 oder 8080) so konfigurieren, dass es auf ein Backend mit der App (z. B. `server app 127.0.0.1:3001` oder im Docker-Netz `app:3001`) zeigt.
+2. Aufruf der App über HAProxy (z. B. http://localhost/ oder http://localhost:8080/).
+3. Im **Dashboard** erscheint die Sektion **HAProxy-Statistiken (Live)** mit einer Tabelle: Typ (frontend/backend/server), Name, Requests, Sessions, Bytes in/out usw. So siehst du direkt, welches Frontend/Backend wie oft genutzt wird.
+
+Die Daten kommen von der Data Plane API (`/v3/services/haproxy/stats/native`); die App fragt sie beim Laden der Startseite ab.
+
 ## Troubleshooting: „API: 502 – fetch failed“
 
 Wenn die App **http://localhost:5555** nicht erreicht:

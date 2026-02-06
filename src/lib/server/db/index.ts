@@ -20,6 +20,17 @@ function getDb(): Database.Database {
 		for (const sql of schemaStatements) {
 			db.exec(sql);
 		}
+		// Migration: created_at nachrüsten, falls Tabelle ohne diese Spalte existierte
+		const auditInfo = db.prepare("PRAGMA table_info(audit_log)").all() as { name: string }[];
+		if (auditInfo.length > 0 && !auditInfo.some((c) => c.name === 'created_at')) {
+			db.exec(`ALTER TABLE audit_log ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))`);
+			db.exec(`CREATE INDEX IF NOT EXISTS idx_audit_created_at ON audit_log(created_at)`);
+		}
+		const statsInfo = db.prepare("PRAGMA table_info(stats_snapshots)").all() as { name: string }[];
+		if (statsInfo.length > 0 && !statsInfo.some((c) => c.name === 'created_at')) {
+			db.exec(`ALTER TABLE stats_snapshots ADD COLUMN created_at TEXT NOT NULL DEFAULT (datetime('now'))`);
+			db.exec(`CREATE INDEX IF NOT EXISTS idx_stats_created_at ON stats_snapshots(created_at)`);
+		}
 	}
 	return db;
 }

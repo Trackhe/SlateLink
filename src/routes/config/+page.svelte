@@ -1,7 +1,8 @@
 <script lang="ts">
+  type Named = { name: string };
   export let data: {
-    frontends: unknown[];
-    backends: unknown[];
+    frontends: Named[];
+    backends: Named[];
     error: string | null;
   };
 </script>
@@ -18,11 +19,7 @@
       <ul class="list-disc list-inside text-sm text-slate-700">
         {#each data.frontends as f}
           <li>
-            {#if typeof f === 'object' && f !== null && 'name' in f}
-              <a href="/config/frontends/{(f as { name: string }).name}" class="text-slate-800 hover:underline">{(f as { name: string }).name}</a>
-            {:else}
-              {JSON.stringify(f)}
-            {/if}
+            <a href="/config/frontends/{f.name}" class="text-slate-800 hover:underline">{f.name}</a>
           </li>
         {/each}
       </ul>
@@ -36,11 +33,7 @@
       <ul class="list-disc list-inside text-sm text-slate-700">
         {#each data.backends as b}
           <li>
-            {#if typeof b === 'object' && b !== null && 'name' in b}
-              <a href="/config/backends/{(b as { name: string }).name}" class="text-slate-800 hover:underline">{(b as { name: string }).name}</a>
-            {:else}
-              {JSON.stringify(b)}
-            {/if}
+            <a href="/config/backends/{b.name}" class="text-slate-800 hover:underline">{b.name}</a>
           </li>
         {/each}
       </ul>
