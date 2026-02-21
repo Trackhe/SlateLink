@@ -7,7 +7,7 @@ dataplaneapi:
     api_address: ""
     api_port: 0
   scheme:
-    - http
+  - http
   userlist:
     userlist: dataplaneapi
     userlist_file: ""
@@ -22,18 +22,17 @@ dataplaneapi:
     spoe_dir: /usr/local/etc/haproxy/spoe
 haproxy:
   config_file: /usr/local/etc/haproxy/haproxy.cfg
-  master_worker_mode: true
   haproxy_bin: /usr/local/sbin/haproxy
+  master_worker_mode: true
   reload:
     reload_delay: 5
-    reload_strategy: custom
     reload_cmd: /package/admin/s6/command/s6-svc -2 /run/s6-rc/servicedirs/haproxy
     restart_cmd: /package/admin/s6/command/s6-svc -r /run/s6-rc/servicedirs/haproxy
-    stop_cmd: /package/admin/s6/command/s6-svc -d /run/s6-rc/servicedirs/haproxy
     status_cmd: /package/admin/s6/command/s6-svstat -u /run/s6-rc/servicedirs/haproxy
+    reload_strategy: custom
 log_targets:
-  - log_to: stdout
-    log_level: info
-    log_types:
-      - access
-      - app
+- log_to: stdout
+  log_level: info
+  log_types:
+  - access
+  - app

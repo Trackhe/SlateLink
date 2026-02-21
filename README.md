@@ -1,6 +1,6 @@
 # SlateLink – HAProxy Management Web Interface
 
-Web-Interface zur Verwaltung von HAProxy über die offizielle **HAProxy Data Plane API**. Unterstützt HTTP-, TCP- und UDP-Stream-Proxy, Client-IP-Weitergabe (X-Forwarded-For / PROXY protocol), Statistiken (Live + Historie), Audit-Log und Zertifikatsverwaltung (Certbot-Hook).
+Web-Interface zur Verwaltung von HAProxy über die offizielle **HAProxy Data Plane API**. Unterstützt HTTP-, TCP- und UDP-Stream-Proxy, Client-IP-Weitergabe (X-Forwarded-For / PROXY protocol), Statistiken (Live + Historie) und Audit-Log.
 
 ## Architektur
 
@@ -8,7 +8,6 @@ Web-Interface zur Verwaltung von HAProxy über die offizielle **HAProxy Data Pla
 flowchart LR
   subgraph extern [Extern]
     User[Browser]
-    Certbot[Certbot]
   end
   subgraph app [SvelteKit-App :3001]
     UI[Seiten / UI]
@@ -22,13 +21,12 @@ flowchart LR
     HAProxy[HAProxy]
   end
   User -->|"/" + "/api/*"| app
-  Certbot -->|"POST /api/certificates/upload-from-certbot"| app
   Server -->|REST + Basic Auth| DPA
   DPA -->|stats socket| HAProxy
 ```
 
 - **HAProxy** (mit Data Plane API) – Reverse Proxy, Stats-Frontend auf Port 8404
-- **App** (ein SvelteKit-Projekt, Node + adapter-node) – eine Anwendung: API unter `/api/*`, UI (Dashboard, Konfiguration, Zertifikate, Audit-Log) unter `/`, Port 3001
+- **App** (ein SvelteKit-Projekt, Node + adapter-node) – eine Anwendung: API unter `/api/*`, UI (Dashboard, Konfiguration, Audit-Log) unter `/`, Port 3001
 
 ## Voraussetzungen
 
@@ -108,7 +106,6 @@ Wenn die App **http://localhost:5555** nicht erreicht:
      Wenn die Data Plane API im Container nicht startet (z. B. fehlender Socket), erscheinen Fehler dort.
 
 3. **App lokal:** In `.env` oder `.env.local` muss stehen:
-
    - `DATAPLANE_API_URL=http://localhost:5555`
    - Nach Änderung an .env: App neu starten (`bun run dev`).
 
@@ -116,28 +113,26 @@ Wenn die App **http://localhost:5555** nicht erreicht:
 
 ## API
 
-| Endpoint                                     | Beschreibung                                                                |
-| -------------------------------------------- | --------------------------------------------------------------------------- |
-| `GET /api/health`                            | Health-Check                                                                |
-| `GET /api/info`                              | Data Plane API Info                                                         |
-| `GET /api/frontends`                         | Frontends (DPA)                                                             |
-| `GET /api/backends`                          | Backends (DPA)                                                              |
-| `GET /api/certificates`                      | SSL-Zertifikate (DPA)                                                       |
-| `GET /api/stats`                             | Live-Statistiken (HAProxy Stats)                                            |
-| `GET /api/stats/snapshot`                    | Snapshot in DB schreiben                                                    |
-| `GET /api/stats/history`                     | Historie aus SQLite (from, to, limit, offset)                               |
-| `GET /api/audit`                             | Audit-Log (from, to, action, resource_type, limit, offset)                  |
-| `POST /api/config/backends`                  | Backend anlegen (name, servers[])                                            |
-| `PUT /api/config/backends/[name]`            | Backend bearbeiten (z. B. mode)                                             |
-| `POST /api/config/backends/[name]/servers`   | Server hinzufügen                                                           |
-| `DELETE /api/config/backends/[name]/servers/[server_name]` | Server entfernen                             |
-| `DELETE /api/config/backends/[name]`         | Backend löschen (409 wenn ein Frontend darauf verweist)                     |
-| `POST /api/config/frontends`                 | Frontend anlegen (name, default_backend, bindPort, options)                 |
-| `PUT /api/config/frontends/[name]`           | Frontend bearbeiten (z. B. default_backend)                                 |
-| `POST /api/config/frontends/[name]/binds`    | Bind hinzufügen (409 wenn Adresse:Port schon vergeben)                      |
-| `DELETE /api/config/frontends/[name]/binds/[bind_name]` | Bind entfernen                               |
-| `DELETE /api/config/frontends/[name]`        | Frontend löschen                                                            |
-| `POST /api/certificates/upload-from-certbot` | Certbot-Hook: JSON `{ pem, storage_name }` oder text/plain + x-storage-name |
+| Endpoint                                                   | Beschreibung                                                |
+| ---------------------------------------------------------- | ----------------------------------------------------------- |
+| `GET /api/health`                                          | Health-Check                                                |
+| `GET /api/info`                                            | Data Plane API Info                                         |
+| `GET /api/frontends`                                       | Frontends (DPA)                                             |
+| `GET /api/backends`                                        | Backends (DPA)                                              |
+| `GET /api/stats`                                           | Live-Statistiken (HAProxy Stats)                            |
+| `GET /api/stats/snapshot`                                  | Snapshot in DB schreiben                                    |
+| `GET /api/stats/history`                                   | Historie aus SQLite (from, to, limit, offset)               |
+| `GET /api/audit`                                           | Audit-Log (from, to, action, resource_type, limit, offset)  |
+| `POST /api/config/backends`                                | Backend anlegen (name, servers[])                           |
+| `PUT /api/config/backends/[name]`                          | Backend bearbeiten (z. B. mode)                             |
+| `POST /api/config/backends/[name]/servers`                 | Server hinzufügen                                           |
+| `DELETE /api/config/backends/[name]/servers/[server_name]` | Server entfernen                                            |
+| `DELETE /api/config/backends/[name]`                       | Backend löschen (409 wenn ein Frontend darauf verweist)     |
+| `POST /api/config/frontends`                               | Frontend anlegen (name, default_backend, bindPort, options) |
+| `PUT /api/config/frontends/[name]`                         | Frontend bearbeiten (z. B. default_backend)                 |
+| `POST /api/config/frontends/[name]/binds`                  | Bind hinzufügen (409 wenn Adresse:Port schon vergeben)      |
+| `DELETE /api/config/frontends/[name]/binds/[bind_name]`    | Bind entfernen                                              |
+| `DELETE /api/config/frontends/[name]`                      | Frontend löschen                                            |
 
 ## Dokumentation
 

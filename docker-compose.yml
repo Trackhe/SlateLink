@@ -2,11 +2,12 @@ services:
   haproxy:
     image: haproxytech/haproxy-alpine:s6-latest
     container_name: haproxy_main
-    user: root
     ports:
-      - "80:8080"
-      - "443:8443"
+      - "80:80"
+      - "443:443"
+      - "9000:9000"
       - "5555:5555"
+      - "9999:9999"
     volumes:
       - ./haproxy:/usr/local/etc/haproxy:rw
     # Damit das Backend die App auf dem Host erreicht (app = host.docker.internal:3001)

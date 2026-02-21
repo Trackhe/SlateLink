@@ -10,27 +10,27 @@
 
 ### M1 – Infrastruktur (Tag: `milestone/m1-infrastructure`)
 
-| Komponente | Datei(en) | Beschreibung |
-|------------|-----------|--------------|
-| Docker Compose | `docker-compose.yml` | Services: haproxy (s6), app (SvelteKit). Netz, Volumes. |
-| HAProxy | `haproxy/haproxy.cfg` | global, userlist, defaults (forwardfor), Stats-Frontend :8404, HTTP-Beispiel, TCP/UDP auskommentiert. |
-| .gitignore | `.gitignore` | node_modules, .env, dist, *.db, certbot, data. |
+| Komponente     | Datei(en)             | Beschreibung                                                                                          |
+| -------------- | --------------------- | ----------------------------------------------------------------------------------------------------- |
+| Docker Compose | `docker-compose.yml`  | Services: haproxy (s6), app (SvelteKit). Netz, Volumes.                                               |
+| HAProxy        | `haproxy/haproxy.cfg` | global, userlist, defaults (forwardfor), Stats-Frontend :8404, HTTP-Beispiel, TCP/UDP auskommentiert. |
+| .gitignore     | `.gitignore`          | node_modules, .env, dist, \*.db, certbot, data.                                                       |
 
 ---
 
 ### M2 – App (ein SvelteKit-Projekt, Node + adapter-node)
 
-| Komponente | Datei(en) | Beschreibung |
-|------------|-----------|--------------|
-| Konfiguration | `src/lib/server/config.ts` | Env: DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL, STATS_SNAPSHOT_INTERVAL_MS, STATS_RETENTION_DAYS. |
-| Data Plane API Client | `src/lib/server/dataplane.ts` | getInfo(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); frontendNamesUsingBackend(raw, backendName); usedConfigNames(raw, raw); getAllUsedBindEndpoints(), bindEndpointKey(); createFrontend/Backend, updateFrontend/Backend, deleteFrontend/Backend; getBinds(), createBind(), deleteBind(); getServers(), createServer(), updateServer(), deleteServer(); getDefaults(), updateDefaults(); getSslCertificates(), upload/replaceSslCertificate(). createServer: Default check: 'disabled'. |
-| Audit Logger | `src/lib/server/audit.ts` | logAction(entry), getAuditLog(options). |
-| Datenbank | `src/lib/server/db/schema.ts`, `src/lib/server/db/index.ts` | SQLite (better-sqlite3). Tabellen: stats_snapshots, audit_log. getDatabase(), closeDatabase(). |
-| Stats Collector | `src/lib/server/stats.ts` | writeStatsSnapshot(), getStatsHistory(), deleteSnapshotsOlderThanDays(), startStatsSnapshotTimer(). |
-| API-Routen | `src/routes/api/**/+server.ts` | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/certificates, /api/stats, /api/stats/snapshot, /api/stats/history; POST /api/config/backends, POST /api/config/frontends; PUT/DELETE /api/config/backends/[name], /api/config/frontends/[name]; POST/PUT/DELETE /api/config/backends/[name]/servers, /api/config/backends/[name]/servers/[server_name] (PUT z. B. { "check": "disabled" }); POST/DELETE /api/config/frontends/[name]/binds, /api/config/frontends/[name]/binds/[bind_name]. DELETE Backend nur wenn kein Frontend verweist (409). POST /api/config/proxies (Legacy); POST /api/certificates/upload-from-certbot. |
-| UI | `src/routes/+layout.svelte`, `config/`, `config/backends/new/`, `config/frontends/new/`, `config/backends/[name]/`, `config/frontends/[name]/`, `certificates/`, `audit/` | Config: Liste; „Backend anlegen“, „Frontend anlegen“. Backend-Detail: Bearbeiten (Mode, Server hinzufügen/entfernen), pro Server „Check deaktivieren“, Löschen wenn kein Frontend verweist. Frontend-Detail: Bearbeiten (default_backend, Binds hinzufügen/entfernen), Löschen. |
-| Build | `package.json`, `svelte.config.js`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js` | adapter-node, Tailwind 3, Vite 5. |
-| Docker | `Dockerfile` | node:22-alpine, `bun run build`, node build, Port 3001. **Package Manager:** Bun (`bun install`, `bun run dev`, `bun test`). |
+| Komponente            | Datei(en)                                                                                                                                                | Beschreibung                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Konfiguration         | `src/lib/server/config.ts`                                                                                                                               | Env: DATAPLANE*API*\*, DATABASE_PATH, HAPROXY_STATS_URL; optional: HAPROXY_SSL_CERTS_DIR (PEM von Disk, ohne Socket), HAPROXY_STATS_SOCKET (PEM via „dump ssl cert“), STATS_SNAPSHOT_INTERVAL_MS, STATS_RETENTION_DAYS.                                                                                                                                                                                                                                                                                                                                                                                |
+| Data Plane API Client | `src/lib/server/dataplane.ts`                                                                                                                            | getInfo(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); frontendNamesUsingBackend(raw, backendName); usedConfigNames(raw, raw); getAllUsedBindEndpoints(), bindEndpointKey(); createFrontend/Backend, updateFrontend/Backend, deleteFrontend/Backend; getBinds(), createBind(), deleteBind(); getServers(), createServer(), updateServer(), deleteServer(); getDefaults(), updateDefaults(). createServer: Default check: 'disabled'.                                                                                                                                      |
+| Audit Logger          | `src/lib/server/audit.ts`                                                                                                                                | logAction(entry), getAuditLog(options).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| Datenbank             | `src/lib/server/db/schema.ts`, `src/lib/server/db/index.ts`                                                                                              | SQLite (better-sqlite3). Tabellen: stats_snapshots, audit_log. getDatabase(), closeDatabase().                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Stats Collector       | `src/lib/server/stats.ts`                                                                                                                                | writeStatsSnapshot(), getStatsHistory(), deleteSnapshotsOlderThanDays(), startStatsSnapshotTimer().                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| API-Routen            | `src/routes/api/**/+server.ts`                                                                                                                           | GET /api/health, /api/info, /api/audit, /api/frontends, /api/backends, /api/stats, /api/stats/snapshot, /api/stats/history; POST /api/config/backends, POST /api/config/frontends; PUT/DELETE /api/config/backends/[name], /api/config/frontends/[name]; POST/PUT/DELETE /api/config/backends/[name]/servers, /api/config/backends/[name]/servers/[server_name] (PUT z. B. { "check": "disabled" }); POST/PUT/DELETE /api/config/frontends/[name]/binds, /api/config/frontends/[name]/binds/[bind_name]. DELETE Backend nur wenn kein Frontend verweist (409). POST /api/config/proxies (Legacy). |
+| UI                    | `src/routes/+layout.svelte`, `config/`, `config/backends/new/`, `config/frontends/new/`, `config/backends/[name]/`, `config/frontends/[name]/`, `audit/` | Config: Liste; „Backend anlegen“, „Frontend anlegen“. Backend-Detail: Bearbeiten (Mode, Server hinzufügen/entfernen), pro Server „Check deaktivieren“, Löschen wenn kein Frontend verweist. Frontend-Detail: Bearbeiten (default_backend, Binds hinzufügen/entfernen), Löschen.                                                                                                                                                                                                                                                                                                                   |
+| Build                 | `package.json`, `svelte.config.js`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js`                                                          | adapter-node, Tailwind 3, Vite 5.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Docker                | `Dockerfile`                                                                                                                                             | node:22-alpine, `bun run build`, node build, Port 3001. **Package Manager:** Bun (`bun install`, `bun run dev`, `bun test`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ---
 
@@ -47,23 +47,21 @@
 
 ### M6 – Doku (teilweise)
 
-| Datei | Inhalt |
-|-------|--------|
-| `.env.example` | DATAPLANE_API_*, DATABASE_PATH, HAPROXY_STATS_URL, PORT. |
-| `README.md` | Architektur, Schnellstart, Entwicklung, API-Übersicht, Verweis auf IMPLEMENTATION.md, Meilensteine. |
-
-**Certbot-Hook:** `POST /api/certificates/upload-from-certbot` – akzeptiert JSON `{ pem, storage_name }` oder text/plain mit Header `x-storage-name`. Holt Version von DPA, ersetzt vorhandenes Zertifikat (PUT) oder lädt neues (POST), schreibt Audit-Eintrag. Certbot-Skript kann z. B. `curl -X POST -H "Content-Type: application/json" -d '{"pem":"'$(cat fullchain.pem)$(cat privkey.pem)'", "storage_name":"example.com.pem"}'` nutzen.
+| Datei          | Inhalt                                                                                              |
+| -------------- | --------------------------------------------------------------------------------------------------- |
+| `.env.example` | DATAPLANE*API*\*, DATABASE_PATH, HAPROXY_STATS_URL, PORT.                                           |
+| `README.md`    | Architektur, Schnellstart, Entwicklung, API-Übersicht, Verweis auf IMPLEMENTATION.md, Meilensteine. |
 
 ---
 
 ## 2. Implementierte Funktionen (Übersicht)
 
 - **config:** config (src/lib/server/config.ts)
-- **dataplane:** getInfo(), getConfigurationVersion(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); createFrontend/Backend(), updateFrontend/Backend(), deleteFrontend/Backend(); getServers(), createServer(), updateServer(), deleteServer(); getBinds(), createBind(), deleteBind(); getSslCertificates(), upload/replaceSslCertificate()
+- **dataplane:** getInfo(), getConfigurationVersion(), getFrontends(), getFrontend(name), getBackends(), getBackend(name); createFrontend/Backend(), updateFrontend/Backend(), deleteFrontend/Backend(); getServers(), createServer(), updateServer(), deleteServer(); getBinds(), createBind(), deleteBind()
 - **audit:** logAction(entry), getAuditLog(options)
 - **stats:** writeStatsSnapshot(), getStatsHistory(), deleteSnapshotsOlderThanDays(), startStatsSnapshotTimer()
 - **db:** getDatabase(), closeDatabase(), schemaStatements, AuditLogRow, StatsSnapshotRow (better-sqlite3)
-- **UI:** Seiten Dashboard, Config (Liste + Detail frontends/backends), Certificates, Audit
+- **UI:** Seiten Dashboard, Config (Liste + Detail frontends/backends), Audit
 
 ---
 
@@ -72,14 +70,35 @@
 **Lauf:** `bun run test` (Vitest). Vor jedem Commit Tests ausführen; nur bei grün committen (Plan §9.1).  
 **Ort:** `src/lib/server/**/*.test.ts`.
 
-| Datei | Getestet |
-|-------|----------|
-| `src/lib/server/db/index.test.ts` | Schema audit_log, stats_snapshots; INSERT/SELECT. DB mit `:memory:` (vi.mock `$env/dynamic/private` → process.env). |
-| `src/lib/server/audit.test.ts` | logAction (id, optionale Felder); getAuditLog (Reihenfolge, Filter action, limit). Nach Test: closeDatabase(). |
-| `src/lib/server/stats.test.ts` | getStatsHistory (leer, mit Daten, limit); deleteSnapshotsOlderThanDays. |
+| Datei                              | Getestet                                                                                                                                                                                                                                       |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/server/db/index.test.ts`  | Schema audit_log, stats_snapshots; INSERT/SELECT. DB mit `:memory:` (vi.mock `$env/dynamic/private` → process.env).                                                                                                                            |
+| `src/lib/server/audit.test.ts`     | logAction (id, optionale Felder); getAuditLog (Reihenfolge, Filter action, limit). Nach Test: closeDatabase().                                                                                                                                 |
+| `src/lib/server/stats.test.ts`     | getStatsHistory (leer, mit Daten, limit); deleteSnapshotsOlderThanDays.                                                                                                                                                                        |
 | `src/lib/server/dataplane.test.ts` | getInfo, getConfigurationVersion, getFrontends, getFrontend, getBackends, getBackend; frontendNamesUsingBackend; usedConfigNames; bindEndpointKey; getAllUsedBindEndpoints; deleteBind, deleteServer (Pfad + method). globalThis.fetch mocken. |
 
 **Regel:** Neue Module/Routen zeitnah testen; Test-Doku hier anpassen und mit committen.
+
+---
+
+## 3.1 SSL-Ordner und crt_base (v3-Spec)
+
+Laut **v3-Spezifikation** (`crt_store`):
+- **crt_base:** „Default directory to **fetch** SSL certificates from“ – Verzeichnis, aus dem Zertifikate gelesen werden. Die Spec legt nicht fest, wo ACME-Zertifikate hingeschrieben werden.
+- **Storage:** Zertifikate auf Platte verwaltet die **Data Plane API** über `/services/haproxy/storage/ssl_certificates` im Verzeichnis **`resources.ssl_certs_dir`** (z. B. `/usr/local/etc/haproxy/ssl`).
+
+**Empfehlung:** `crt_base` und `key_base` im CrtStore so wählen, dass sie auf dasselbe Verzeichnis zeigen wie **`resources.ssl_certs_dir`** in der DPA-Config – dann liegen Uploads und die von HAProxy/ACME erwarteten Dateien am gleichen Ort.
+
+**„Kein Zertifikat“ obwohl ACME ausgestellt?**  
+Die v3-Spec definiert nicht, wo der ACME-Client die Datei speichert. Die Zertifikatsdatei muss im Verzeichnis liegen, auf das **crt_base** bzw. **ssl_certs_dir** zeigt; ggf. prüfen, wo das Zertifikat tatsächlich ankommt, oder per Hook/Manuell dorthin legen.
+
+### 3.2 ACME-Server mit selbstsigniertem Zertifikat
+
+Wenn **keine Anfrage** beim ACME-Server ankommt (z. B. lokaler Test-ACME auf dem Host), blockiert oft die **TLS-Verifizierung**: HAProxy bricht die Verbindung ab, bevor eine HTTP-Anfrage gesendet wird.
+
+**Lösung:** In der Global-Config `httpclient.ssl.verify none` setzen. In der App: Store-Detail → „ACME-Scheduler + TLS-Verify aus (selbstsign. ACME-Server)“ klicken (setzt Scheduler auf „auto“ und `httpclient.ssl.verify none`). API: `POST /api/config/acme/enable-scheduler?insecure=1`.
+
+Falls die Data Plane API das Feld `httpclient.ssl.verify` nicht unterstützt (PUT Global schlägt fehl oder ignoriert es), die Zeile manuell in `haproxy.cfg` unter `global` eintragen – beachten, dass die DPA die Config bei Änderungen überschreiben kann.
 
 ---
 
@@ -98,4 +117,4 @@
 
 ---
 
-*Zuletzt aktualisiert: PUT Server (check: disabled), Backend-Detail „Check deaktivieren“; updateServer in dataplane; IMPLEMENTATION.md.*
+_Zuletzt aktualisiert: PUT Server (check: disabled), Backend-Detail „Check deaktivieren“; updateServer in dataplane; IMPLEMENTATION.md._

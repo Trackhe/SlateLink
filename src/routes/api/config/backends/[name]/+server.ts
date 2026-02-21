@@ -1,12 +1,39 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import {
-	updateBackend,
-	deleteBackend,
+	getBackend,
 	getFrontends,
-	frontendNamesUsingBackend
+	getServers,
+	frontendNamesUsingBackend,
+	updateBackend,
+	deleteBackend
 } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
+
+function toList(raw: unknown): unknown[] {
+	return Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? [];
+}
+
+export const GET: RequestHandler = async ({ params }) => {
+	try {
+		const [backend, frontendsRaw, serversRaw] = await Promise.all([
+			getBackend(params.name),
+			getFrontends(),
+			getServers(params.name)
+		]);
+		const frontendsUsingThis = frontendNamesUsingBackend(frontendsRaw, params.name);
+		return json({
+			backend,
+			servers: toList(serversRaw),
+			frontendsUsingThis,
+			canDelete: frontendsUsingThis.length === 0,
+			error: null
+		});
+	} catch (e) {
+		const message = e instanceof Error ? e.message : String(e);
+		return json({ backend: null, servers: [], frontendsUsingThis: [], canDelete: false, error: message }, { status: 502 });
+	}
+};
 
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {

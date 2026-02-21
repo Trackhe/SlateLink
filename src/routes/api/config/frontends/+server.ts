@@ -9,13 +9,19 @@ import {
 	getBackends,
 	usedConfigNames,
 	getAllUsedBindEndpoints,
-	bindEndpointKey
+	bindEndpointKey,
+	syncRedirectHttpToHttps
 } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
+import { setFrontendOptions } from '$lib/server/db';
+
+type BindEntry = { name?: string; address?: string; port: number };
 
 type FrontendBody = {
 	name: string;
 	default_backend: string;
+	/** Mehrere Binds (wie beim Bearbeiten). Wenn gesetzt, werden bindAddress/bindPort ignoriert. */
+	binds?: BindEntry[];
 	bindAddress?: string;
 	bindPort?: number;
 	bindName?: string;
@@ -23,6 +29,7 @@ type FrontendBody = {
 		forwardClientIp?: boolean;
 		websocketSupport?: boolean;
 		forwardProto?: boolean;
+		redirectHttpToHttps?: boolean;
 	};
 };
 
@@ -31,7 +38,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const body = (await request.json()) as FrontendBody;
 		if (!body || typeof body !== 'object' || !body.name || !body.default_backend) {
 			return json(
-				{ error: 'Body must be JSON with name and default_backend. Optional: bindAddress, bindPort, options' },
+				{ error: 'Body must be JSON with name and default_backend. Optional: binds[], bindAddress, bindPort, options' },
 				{ status: 400 }
 			);
 		}
@@ -44,20 +51,43 @@ export const POST: RequestHandler = async ({ request }) => {
 				{ status: 409 }
 			);
 		}
-		const bindPort = Number(body.bindPort);
-		const bindAddress = (body.bindAddress ?? '*').trim();
-		if (Number.isInteger(bindPort) && bindPort >= 1 && bindPort <= 65535) {
-			const usedBinds = await getAllUsedBindEndpoints();
-			const newKey = bindEndpointKey(bindAddress, bindPort);
-			if (usedBinds.has(newKey)) {
+		const options = body.options ?? {};
+
+		// Binds: entweder Array oder ein einzelner Bind (Legacy)
+		const bindsList: BindEntry[] = Array.isArray(body.binds) && body.binds.length > 0
+			? body.binds.filter((b) => typeof b === 'object' && b !== null && Number(b.port) >= 1 && Number(b.port) <= 65535)
+			: [];
+		const useSingleBind = bindsList.length === 0 && body.bindPort != null;
+		const singlePort = Number(body.bindPort);
+		const singleAddress = (body.bindAddress ?? '*').trim();
+		if (useSingleBind && Number.isInteger(singlePort) && singlePort >= 1 && singlePort <= 65535) {
+			bindsList.push({
+				name: body.bindName ?? `bind_${singlePort}`,
+				address: singleAddress,
+				port: singlePort
+			});
+		}
+
+		const usedBinds = await getAllUsedBindEndpoints();
+		for (const b of bindsList) {
+			const addr = (b.address ?? '*').trim() || '*';
+			const port = Number(b.port);
+			const key = bindEndpointKey(addr, port);
+			if (usedBinds.has(key)) {
 				return json(
-					{ error: `Bind-Adresse ${bindAddress}:${bindPort} ist bereits vergeben. Jeder Listen-Endpunkt (Adresse:Port) darf nur einmal vorkommen.` },
+					{ error: `Bind-Adresse ${addr}:${port} ist bereits vergeben. Jeder Listen-Endpunkt (Adresse:Port) darf nur einmal vorkommen.` },
 					{ status: 409 }
 				);
 			}
+			usedBinds.add(key);
 		}
-		const bindName = body.bindName ?? `bind_${Number.isInteger(bindPort) && bindPort > 0 ? bindPort : 80}`;
-		const options = body.options ?? {};
+
+		if (bindsList.length === 0) {
+			return json(
+				{ error: 'Mindestens ein Bind (Adresse + Port 1–65535) ist nötig.' },
+				{ status: 400 }
+			);
+		}
 
 		await createFrontend({
 			name,
@@ -66,13 +96,23 @@ export const POST: RequestHandler = async ({ request }) => {
 			maxconn: 3000
 		});
 
-		if (Number.isInteger(bindPort) && bindPort >= 1 && bindPort <= 65535) {
+		for (const b of bindsList) {
+			const bindName = (b.name ?? '').trim() || `bind_${b.port}`;
 			await createBind(name, {
 				name: bindName,
-				address: bindAddress,
-				port: bindPort
+				address: (b.address ?? '*').trim() || '*',
+				port: Number(b.port)
 			});
 		}
+
+		setFrontendOptions(name, {
+			forwardClientIp: options.forwardClientIp,
+			forwardProto: options.forwardProto,
+			websocketSupport: options.websocketSupport,
+			redirectHttpToHttps: options.redirectHttpToHttps
+		});
+
+		await syncRedirectHttpToHttps(name, options.redirectHttpToHttps ?? false);
 
 		if (options.forwardClientIp || options.websocketSupport) {
 			const defaultsRaw = await getDefaults();
@@ -106,7 +146,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			ok: true,
 			name,
 			default_backend,
-			bind: bindPort >= 1 && bindPort <= 65535 ? { address: bindAddress, port: bindPort } : null
+			binds: bindsList.map((b) => ({ address: (b.address ?? '*').trim() || '*', port: Number(b.port) }))
 		});
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);
