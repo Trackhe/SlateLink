@@ -938,148 +938,112 @@
 
 <svelte:window on:keydown={handleKeydown} />
 
-<h1 class="text-2xl font-semibold mb-2 text-[var(--gh-fg)]">Config</h1>
-<p class="text-[var(--gh-fg-muted)] mb-4">
-  Frontends & Backends aus der HAProxy-Konfiguration (Data Plane API). Backends
-  zuerst anlegen, dann Frontends mit Backend-Auswahl.
-</p>
-<p class="mb-2 flex flex-wrap gap-2">
-  <button
-    type="button"
-    class="inline-flex items-center rounded-lg bg-[var(--gh-accent)] text-white px-3 py-2 text-sm font-medium hover:opacity-90"
-    on:click={openBackendModal}
-  >
+<div class="page-header">
+  <h1 class="page-title">Config</h1>
+  <p class="page-intro">
+    Frontends & Backends aus der HAProxy-Konfiguration (Data Plane API). Backends
+    zuerst anlegen, dann Frontends mit Backend-Auswahl.
+  </p>
+</div>
+<div class="page-actions">
+  <button type="button" class="btn btn-primary" on:click={openBackendModal}>
     + Backend anlegen
   </button>
-  <button
-    type="button"
-    class="inline-flex items-center rounded-lg border border-[var(--gh-border)] bg-[var(--gh-canvas)] text-[var(--gh-fg)] px-3 py-2 text-sm font-medium hover:bg-[var(--gh-btn-hover)]"
-    on:click={openFrontendModal}
-  >
+  <button type="button" class="btn btn-secondary" on:click={openFrontendModal}>
     + Frontend anlegen
   </button>
-  <button
-    type="button"
-    class="inline-flex items-center rounded-lg border border-[var(--gh-border)] bg-[var(--gh-canvas)] text-[var(--gh-fg)] px-3 py-2 text-sm font-medium hover:bg-[var(--gh-btn-hover)]"
-    on:click={() => openRuleModal(null)}
-  >
+  <button type="button" class="btn btn-secondary" on:click={() => openRuleModal(null)}>
     + Regel anlegen
   </button>
-</p>
+</div>
 {#if data.error}
-  <p class="text-red-600 dark:text-red-400 text-sm">Fehler: {data.error}</p>
+  <p class="gh-error">Fehler: {data.error}</p>
 {:else}
-  <section class="mb-6 rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]">
-    <h2 class="font-medium text-[var(--gh-fg)] mb-2">Standard-Zertifikat für HTTPS-Binds</h2>
-    <p class="text-[var(--gh-fg-muted)] text-sm mb-3">
-      Wenn keine Regeln mit Zertifikat existieren, wird der eingebaute Store „default“ (selbstsigniertes Zertifikat) genutzt. Hier kannst du ein anderes Zertifikat oder einen anderen Store als Standard wählen (wird in der DB gespeichert).
-    </p>
-    <div class="flex flex-wrap items-center gap-2">
-      <select
-        bind:value={defaultSslCertCrtList}
-        class="rounded border border-[var(--gh-border)] bg-[var(--gh-canvas)] px-3 py-2 text-sm text-[var(--gh-fg)] min-w-[200px]"
-      >
-        <option value="">Store: default (eingebaut)</option>
-        {#each data.crtStores ?? [] as s}
-          <option value="store:{s.name}">Store: {s.name}</option>
-        {/each}
-        {#each mergedCertOptions as opt}
-          <option value={opt.value}>{opt.label}</option>
-        {/each}
-      </select>
-      <button
-        type="button"
-        class="rounded-lg border border-[var(--gh-border)] px-3 py-2 text-sm hover:bg-[var(--gh-btn-hover)] text-[var(--gh-fg)] disabled:opacity-50"
-        disabled={defaultSslCertSaving}
-        on:click={saveDefaultSslCert}
-      >
-        {defaultSslCertSaving ? "Speichern …" : "Speichern"}
-      </button>
+  <section class="config-section">
+    <div class="gh-info-block">
+      <h2 class="config-section-title">Standard-Zertifikat für HTTPS-Binds</h2>
+      <p class="config-section-intro">
+        Wenn keine Regeln mit Zertifikat existieren, wird der eingebaute Store „default“ (selbstsigniertes Zertifikat) genutzt. Hier kannst du ein anderes Zertifikat oder einen anderen Store als Standard wählen (wird in der DB gespeichert).
+      </p>
+      <div class="flex flex-wrap items-center gap-2">
+        <select
+          bind:value={defaultSslCertCrtList}
+          class="gh-select"
+          style="min-width: 200px;"
+        >
+          <option value="">Store: default (eingebaut)</option>
+          {#each data.crtStores ?? [] as s}
+            <option value="store:{s.name}">Store: {s.name}</option>
+          {/each}
+          {#each mergedCertOptions as opt}
+            <option value={opt.value}>{opt.label}</option>
+          {/each}
+        </select>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          disabled={defaultSslCertSaving}
+          on:click={saveDefaultSslCert}
+        >
+          {defaultSslCertSaving ? "Speichern …" : "Speichern"}
+        </button>
+      </div>
+      {#if defaultSslCertError}
+        <p class="gh-error">{defaultSslCertError}</p>
+      {/if}
     </div>
-    {#if defaultSslCertError}
-      <p class="text-red-600 dark:text-red-400 text-sm mt-2">{defaultSslCertError}</p>
-    {/if}
   </section>
-  <section class="mb-8">
-    <h2 class="font-medium text-[var(--gh-fg)] mb-3">Frontends</h2>
+  <section class="config-section">
+    <h2 class="config-section-title">Frontends</h2>
     {#if Array.isArray(data.frontends) && data.frontends.length > 0}
-      <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
-      >
+      <div class="gh-tile-grid">
         {#each data.frontends as f}
           <button
             type="button"
-            class="w-full text-left block rounded-xl border border-[var(--gh-border)] bg-[var(--gh-canvas-subtle)] shadow-sm hover:shadow-md hover:border-[var(--gh-accent)] transition-all p-4 group"
+            class="gh-tile"
             on:click={() => openFrontendDetail(f.name)}
           >
-            <span
-              class="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200"
-              >frontend</span
-            >
-            <h3
-              class="font-semibold text-[var(--gh-fg)] mt-2 group-hover:text-[var(--gh-accent)] truncate"
-            >
-              {f.name}
-            </h3>
-            <p class="text-[var(--gh-fg-muted)] text-xs mt-1">
-              Details & Bearbeiten →
-            </p>
+            <span class="gh-badge">frontend</span>
+            <span class="gh-tile-title">{f.name}</span>
+            <p class="gh-tile-meta">Details & Bearbeiten →</p>
           </button>
         {/each}
       </div>
     {:else}
-      <p class="text-[var(--gh-fg-muted)] text-sm">Keine Frontends.</p>
+      <p class="config-section-intro" style="margin-bottom: 0;">Keine Frontends.</p>
     {/if}
   </section>
-  <section>
-    <h2 class="font-medium text-[var(--gh-fg)] mb-3">Backends</h2>
+  <section class="config-section">
+    <h2 class="config-section-title">Backends</h2>
     {#if Array.isArray(data.backends) && data.backends.length > 0}
-      <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
-      >
+      <div class="gh-tile-grid">
         {#each data.backends as b}
           <button
             type="button"
-            class="w-full text-left block rounded-xl border border-[var(--gh-border)] bg-[var(--gh-canvas-subtle)] shadow-sm hover:shadow-md hover:border-[var(--gh-accent)] transition-all p-4 group"
+            class="gh-tile"
             on:click={() => openBackendDetail(b.name)}
           >
-            <span
-              class="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/60 text-violet-800 dark:text-violet-200"
-              >backend</span
-            >
-            <h3
-              class="font-semibold text-[var(--gh-fg)] mt-2 group-hover:text-[var(--gh-accent)] truncate"
-            >
-              {b.name}
-            </h3>
-            <p class="text-[var(--gh-fg-muted)] text-xs mt-1">
-              Details & Bearbeiten →
-            </p>
+            <span class="gh-badge">backend</span>
+            <span class="gh-tile-title">{b.name}</span>
+            <p class="gh-tile-meta">Details & Bearbeiten →</p>
           </button>
         {/each}
       </div>
     {:else}
-      <p class="text-[var(--gh-fg-muted)] text-sm">Keine Backends.</p>
+      <p class="config-section-intro" style="margin-bottom: 0;">Keine Backends.</p>
     {/if}
   </section>
-  <section class="mb-8">
-    <h2 class="font-medium text-[var(--gh-fg)] mb-3">Regeln</h2>
-    <p class="text-[var(--gh-fg-muted)] text-sm mb-3">
+  <section class="config-section">
+    <h2 class="config-section-title">Regeln</h2>
+    <p class="config-section-intro">
       Pro Regel: Frontend, Domains, Backend, Zertifikat (optional) und optional HTTP→HTTPS-Redirect für diese Domain.
     </p>
     {#if Array.isArray(data.rules) && data.rules.length > 0}
-      <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
-      >
+      <div class="gh-tile-grid">
         {#each data.rules as rule (rule.id)}
-          <div
-            class="rounded-xl border border-[var(--gh-border)] bg-[var(--gh-canvas-subtle)] shadow-sm p-4 flex flex-col gap-2"
-          >
-            <span
-              class="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 w-fit"
-              >Regel</span
-            >
-            <p class="text-[var(--gh-fg)] font-medium truncate" title={rule.frontend_name}>
+          <div class="gh-tile-static">
+            <span class="gh-badge">Regel</span>
+            <p class="gh-truncate" style="font-weight: 600; color: var(--gh-fg);" title={rule.frontend_name}>
               {rule.frontend_name}
             </p>
             <p class="text-[var(--gh-fg-muted)] text-xs">
@@ -1096,21 +1060,21 @@
               </span>
             {/if}
             {#if rule.redirect_http_to_https}
-              <span class="text-xs px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 w-fit"
-                >HTTP→HTTPS</span
-              >
+              <span class="gh-badge gh-badge--hint">HTTP→HTTPS</span>
             {/if}
-            <div class="flex gap-2 mt-auto pt-2">
+            <div class="gh-tile-actions">
               <button
                 type="button"
-                class="rounded border border-[var(--gh-border)] px-2 py-1 text-xs hover:bg-[var(--gh-btn-hover)] text-[var(--gh-fg)]"
+                class="btn btn-secondary"
+                style="padding: 4px 8px; font-size: 12px;"
                 on:click={() => openRuleModal(rule)}
               >
                 Bearbeiten
               </button>
               <button
                 type="button"
-                class="rounded border border-red-200 px-2 py-1 text-xs hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 dark:text-red-400"
+                class="btn btn-delete"
+                style="padding: 4px 8px; font-size: 12px;"
                 on:click={() => deleteRule(rule)}
               >
                 Löschen
@@ -1120,7 +1084,7 @@
         {/each}
       </div>
     {:else}
-      <p class="text-[var(--gh-fg-muted)] text-sm">Keine Regeln. „+ Regel anlegen“ um Domain→Backend-Zuordnung zu definieren.</p>
+      <p class="config-section-intro" style="margin-bottom: 0;">Keine Regeln. „+ Regel anlegen“ um Domain→Backend-Zuordnung zu definieren.</p>
     {/if}
   </section>
 {/if}
@@ -1133,14 +1097,15 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="backend-modal-title"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+    class="modal-overlay open"
     on:click={handleOverlayClick}
     on:keydown={handleOverlayKeydown}
     tabindex="-1"
   >
     <!-- svelte-ignore a11y-no-static-element-interactions a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
     <div
-      class="bg-[var(--gh-canvas)] border border-[var(--gh-border)] rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      class="modal"
+      style="max-width: 42rem;"
       on:click|stopPropagation
       role="document"
     >
@@ -1166,23 +1131,15 @@
         {#if detailBackendName && detailBackendLoading}
           <p class="text-[var(--gh-fg-muted)] text-sm">Wird geladen …</p>
         {:else if detailBackendName && detailBackendData?.error}
-          <p class="text-red-600 dark:text-red-400 text-sm">
-            {detailBackendData.error}
-          </p>
+          <p class="gh-error">{detailBackendData.error}</p>
         {:else if detailBackendName && detailBackendData?.backend}
           {@const d = detailBackendData}
           <form on:submit|preventDefault={detailSaveBackend} class="space-y-5">
             {#if detailBackendSaveError}
-              <div
-                class="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 text-sm"
-              >
-                {detailBackendSaveError}
-              </div>
+              <div class="gh-alert">{detailBackendSaveError}</div>
             {/if}
-            <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
-            >
-              <h3 class="font-medium text-[var(--gh-fg)] mb-3">Backend</h3>
+            <section class="gh-form-section">
+              <h3>Backend</h3>
               <div class="grid gap-3 sm:grid-cols-2">
                 <label class="block">
                   <span class="text-sm text-[var(--gh-fg-muted)]"
@@ -1222,7 +1179,7 @@
               </label>
             </section>
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">
                 Health-Check (Zieladressen überwachen)
@@ -1341,10 +1298,10 @@
               {/if}
             </section>
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">Server</h3>
-              {#if detailDisableCheckError}<p class="text-red-600 text-sm mb-2">
+              {#if detailDisableCheckError}<p class="gh-error mb-2">
                   {detailDisableCheckError}
                 </p>{/if}
               {#if d.servers.length > 0}
@@ -1364,7 +1321,7 @@
                         {#if srv.check !== "disabled"}
                           <button
                             type="button"
-                            class="text-amber-700 hover:text-amber-800 text-xs"
+                            class="text-[var(--gh-fg-muted)] hover:text-[var(--gh-fg)] text-xs"
                             on:click={() => detailDisableCheck(srv)}
                             disabled={detailDisablingCheck === String(srvName)}
                             title="Check deaktivieren"
@@ -1376,7 +1333,7 @@
                         {/if}
                         <button
                           type="button"
-                          class="text-[var(--gh-fg-muted)] hover:text-red-600 text-xs"
+                          class="text-[var(--gh-fg-muted)] hover:text-[var(--gh-danger)] text-xs"
                           on:click={() => detailRemoveServer(String(srvName))}
                           title="Server entfernen">Entfernen</button
                         >
@@ -1418,7 +1375,7 @@
                   {detailAdding ? "Hinzufügen …" : "Server hinzufügen"}
                 </button>
               </div>
-              {#if detailAddServerError}<p class="text-red-600 text-sm mt-2">
+              {#if detailAddServerError}<p class="gh-error mt-2">
                   {detailAddServerError}
                 </p>{/if}
             </section>
@@ -1427,18 +1384,18 @@
             >
               <div>
                 {#if d.frontendsUsingThis.length > 0}
-                  <p class="text-amber-700 dark:text-amber-400 text-sm">
+                  <p class="gh-alert-warning">
                     Dieses Backend kann nicht gelöscht werden: <strong
                       >{d.frontendsUsingThis.join(", ")}</strong
                     > verweisen darauf.
                   </p>
                 {:else}
-                  {#if detailBackendDeleteError}<p class="text-red-600 text-sm">
+                  {#if detailBackendDeleteError}<p class="gh-error">
                       {detailBackendDeleteError}
                     </p>{/if}
                   <button
                     type="button"
-                    class="rounded-lg border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm text-red-800 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-50"
+                    class="btn btn-delete"
                     disabled={detailBackendDeleting}
                     on:click={detailDeleteBackend}
                   >
@@ -1450,7 +1407,7 @@
               </div>
               <button
                 type="submit"
-                class="rounded-lg bg-[var(--gh-accent)] text-white px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                class="btn btn-primary"
                 disabled={detailBackendSaving}
               >
                 {detailBackendSaving ? "Speichern …" : "Speichern"}
@@ -1460,15 +1417,11 @@
         {:else}
           <!-- Create mode -->
           {#if backendError}
-            <div
-              class="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 text-sm"
-            >
-              {backendError}
-            </div>
+            <div class="gh-alert">{backendError}</div>
           {/if}
           <form on:submit|preventDefault={submitBackend} class="space-y-5">
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">Backend</h3>
               <div class="grid gap-3 sm:grid-cols-2">
@@ -1508,7 +1461,7 @@
               </label>
             </section>
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">
                 Health-Check (Zieladressen überwachen)
@@ -1627,7 +1580,7 @@
               {/if}
             </section>
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">Server</h3>
               {#if backendServers.length > 0}
@@ -1645,7 +1598,7 @@
                       >
                       <button
                         type="button"
-                        class="text-[var(--gh-fg-muted)] hover:text-red-600 text-xs"
+                        class="text-[var(--gh-fg-muted)] hover:text-[var(--gh-danger)] text-xs"
                         on:click={() => removeBackendServer(srvName)}
                         title="Server entfernen">Entfernen</button
                       >
@@ -1691,7 +1644,7 @@
               <button
                 type="submit"
                 disabled={backendBusy || backendServers.length === 0}
-                class="rounded-lg bg-[var(--gh-accent)] text-white px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                class="btn btn-primary"
               >
                 {backendBusy ? "Wird angelegt …" : "Backend anlegen"}
               </button>
@@ -1717,14 +1670,15 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="frontend-modal-title"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+    class="modal-overlay open"
     on:click={handleOverlayClick}
     on:keydown={handleOverlayKeydown}
     tabindex="-1"
   >
     <!-- svelte-ignore a11y-no-static-element-interactions a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
     <div
-      class="bg-[var(--gh-canvas)] border border-[var(--gh-border)] rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      class="modal"
+      style="max-width: 42rem;"
       on:click|stopPropagation
       role="document"
     >
@@ -1750,19 +1704,19 @@
         {#if detailFrontendName && detailFrontendLoading}
           <p class="text-[var(--gh-fg-muted)] text-sm">Wird geladen …</p>
         {:else if detailFrontendName && detailFrontendData?.error}
-          <p class="text-red-600 dark:text-red-400 text-sm">
+          <p class="gh-error">
             {detailFrontendData.error}
           </p>
         {:else if detailFrontendName && detailFrontendData?.frontend}
           {@const d = detailFrontendData}
           <form on:submit|preventDefault={detailSaveFrontend} class="space-y-5">
             {#if detailFrontendSaveError}<div
-                class="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 text-sm"
+                class="gh-alert"
               >
                 {detailFrontendSaveError}
               </div>{/if}
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">
                 Frontend (Eingang)
@@ -1794,7 +1748,7 @@
               </div>
             </section>
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">Optionen</h3>
               <ul class="space-y-2 text-sm">
@@ -1834,7 +1788,7 @@
               </ul>
             </section>
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">
                 Binds (Listen-Adressen)
@@ -1862,7 +1816,7 @@
                       >
                       <button
                         type="button"
-                        class="ml-auto text-[var(--gh-fg-muted)] hover:text-red-600 text-xs shrink-0"
+                        class="ml-auto text-[var(--gh-fg-muted)] hover:text-[var(--gh-danger)] text-xs shrink-0"
                         on:click={() => detailRemoveBind(String(bindName))}
                         title="Bind entfernen">Entfernen</button
                       >
@@ -1946,12 +1900,12 @@
                 </button>
               </div>
               {#if detailAddBindError}
-                <div class="mt-2 rounded-lg px-3 py-2 text-sm text-red-600 dark:text-red-400">
+                <div class="gh-error">
                   {detailAddBindError}
                 </div>
               {/if}
             </section>
-            {#if detailFrontendDeleteError}<p class="text-red-600 text-sm mb-2">
+            {#if detailFrontendDeleteError}<p class="gh-error mb-2">
                 {detailFrontendDeleteError}
               </p>{/if}
             <div
@@ -1959,7 +1913,7 @@
             >
               <button
                 type="button"
-                class="rounded-lg border border-red-300 bg-red-50 dark:bg-red-950/30 px-3 py-2 text-sm text-red-800 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-50"
+                class="btn btn-delete"
                 disabled={detailFrontendDeleting}
                 on:click={detailDeleteFrontend}
               >
@@ -1969,7 +1923,7 @@
               </button>
               <button
                 type="submit"
-                class="rounded-lg bg-[var(--gh-accent)] text-white px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                class="btn btn-primary"
                 disabled={detailFrontendSaving}
               >
                 {detailFrontendSaving ? "Speichern …" : "Speichern"}
@@ -1979,20 +1933,20 @@
         {:else}
           <!-- Create mode -->
           {#if !hasBackends}
-            <p class="mb-4 text-amber-700 dark:text-amber-400 text-sm">
+            <p class="gh-alert-warning config-section">
               Keine Backends vorhanden. Bitte zuerst ein Backend anlegen.
             </p>
           {/if}
           {#if frontendError}
             <div
-              class="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 text-sm"
+              class="gh-alert"
             >
               {frontendError}
             </div>
           {/if}
           <form on:submit|preventDefault={submitFrontend} class="space-y-5">
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">
                 Frontend (Eingang)
@@ -2023,7 +1977,7 @@
               </div>
             </section>
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">Optionen</h3>
               <ul class="space-y-2 text-sm">
@@ -2063,7 +2017,7 @@
               </ul>
             </section>
             <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
+              class="gh-form-section"
             >
               <h3 class="font-medium text-[var(--gh-fg)] mb-3">
                 Binds (Listen-Adressen)
@@ -2083,7 +2037,7 @@
                       >
                       <button
                         type="button"
-                        class="text-[var(--gh-fg-muted)] hover:text-red-600 text-xs"
+                        class="text-[var(--gh-fg-muted)] hover:text-[var(--gh-danger)] text-xs"
                         on:click={() => removeFrontendBind(bindName)}
                         title="Bind entfernen">Entfernen</button
                       >
@@ -2138,7 +2092,7 @@
                   Bind hinzufügen
                 </button>
               </div>
-              {#if createAddBindError}<p class="text-red-600 text-sm mt-2">
+              {#if createAddBindError}<p class="gh-error mt-2">
                   {createAddBindError}
                 </p>{/if}
             </section>
@@ -2149,7 +2103,7 @@
                   !hasBackends ||
                   !selectedBackend?.trim() ||
                   frontendBinds.length === 0}
-                class="rounded-lg bg-[var(--gh-accent)] text-white px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
+                class="btn btn-primary"
               >
                 {frontendBusy ? "Wird angelegt …" : "Frontend anlegen"}
               </button>

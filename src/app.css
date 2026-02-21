@@ -1,8 +1,16 @@
+/* ==========================================================================
+   SlateLink Design System (GitHub/Prime-style, light/dark via CSS variables)
+   Struktur: 1) Variablen  2) Basis  3) Komponenten (Header, Layout, Karten, …)
+   Nur var(--gh-*) für Farben; Radius 6px; Abstände 8|12|16|24px.
+   ========================================================================== */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Cert-Manager-style theme (GitHub-like light/dark) */
+/* --------------------------------------------------------------------------
+   1) CSS Custom Properties – Light / Dark
+   -------------------------------------------------------------------------- */
 :root {
   --gh-canvas: #ffffff;
   --gh-canvas-subtle: #f6f8fa;
@@ -17,6 +25,10 @@
   --gh-btn-hover: #eaeef2;
   --gh-modal-overlay: rgba(31, 35, 40, 0.5);
   --gh-modal-shadow: 0 8px 24px rgba(31, 35, 40, 0.12);
+  --gh-on-accent: #ffffff;
+  --gh-on-danger: #ffffff;
+  --gh-badge-ram: rgba(217, 119, 6, 0.2);
+  --gh-badge-used: rgba(16, 185, 129, 0.2);
 }
 
 html[data-theme="dark"] {
@@ -33,10 +45,25 @@ html[data-theme="dark"] {
   --gh-btn-hover: #30363d;
   --gh-modal-overlay: rgba(0, 0, 0, 0.6);
   --gh-modal-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --gh-on-accent: #0d1117;
+  --gh-on-danger: #0d1117;
+  --gh-badge-ram: rgba(251, 191, 36, 0.25);
+  --gh-badge-used: rgba(52, 211, 153, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   2) Basis
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 @layer base {
   body {
+    margin: 0;
+    padding: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
     font-size: 14px;
     line-height: 1.5;
@@ -44,18 +71,28 @@ html[data-theme="dark"] {
     background: var(--gh-canvas);
     min-height: 100vh;
   }
+
+  code, .gh-code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    background: var(--gh-canvas-subtle);
+    border: 1px solid var(--gh-border);
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
 }
 
-/* Header (Cert-Manager-style) */
+/* --------------------------------------------------------------------------
+   3) Header
+   -------------------------------------------------------------------------- */
 .gh-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: 24px;
   background: var(--gh-canvas-subtle);
   border-bottom: 1px solid var(--gh-border);
   padding: 12px 20px;
-  margin-bottom: 0;
 }
 
 .gh-header-brand {
@@ -63,31 +100,29 @@ html[data-theme="dark"] {
   flex-direction: column;
   gap: 0;
   line-height: 1.2;
-  flex: 1 1 0;
   min-width: 0;
 }
 
-.gh-header-brand .gh-header-title {
+.gh-header-title {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
   color: var(--gh-fg);
 }
 
-.gh-header-brand .gh-header-made {
+.gh-header-made {
   font-size: 11px;
   color: var(--gh-fg-muted);
-  font-weight: 400;
 }
 
-.gh-header-brand .gh-header-made a {
+.gh-header-made a {
   color: var(--gh-fg-muted);
   text-decoration: none;
 }
 
-.gh-header-brand .gh-header-made a:hover {
-  text-decoration: underline;
+.gh-header-made a:hover {
   color: var(--gh-accent);
+  text-decoration: underline;
 }
 
 .gh-header-nav {
@@ -96,11 +131,10 @@ html[data-theme="dark"] {
   justify-content: center;
   gap: 4px;
   flex-wrap: wrap;
-  flex: 1 1 0;
   min-width: 0;
 }
 
-.gh-header-nav .nav-link {
+.nav-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -116,15 +150,14 @@ html[data-theme="dark"] {
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.gh-header-nav .nav-link:hover {
+.nav-link:hover {
   background: var(--gh-btn-hover);
 }
 
-/* Aktiver Tab – hohe Spezifität, damit Link-Farben (a:visited etc.) nicht gewinnen */
 .gh-header-nav a.nav-link.active,
 .gh-header-nav a.nav-link.active:hover {
-  background: var(--gh-accent) !important;
-  color: #fff !important;
+  background: var(--gh-accent);
+  color: var(--gh-on-accent);
   font-weight: 600;
 }
 
@@ -133,7 +166,6 @@ html[data-theme="dark"] {
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  flex: 1 1 0;
   min-width: 0;
 }
 
@@ -152,11 +184,7 @@ html[data-theme="dark"] {
   background: var(--gh-btn-hover);
 }
 
-.theme-toggle-icon {
-  display: inline-block;
-}
-
-/* Config sub-navigation (TLS / Zertifikate etc. sichtbar) */
+/* Config Sub-Navigation */
 .config-subnav {
   display: flex;
   flex-wrap: wrap;
@@ -186,7 +214,9 @@ html[data-theme="dark"] {
   font-weight: 600;
 }
 
-/* Main content area */
+/* --------------------------------------------------------------------------
+   4) Layout & Seitenstruktur
+   -------------------------------------------------------------------------- */
 .app-layout {
   min-height: calc(100vh - 53px);
 }
@@ -199,7 +229,232 @@ html[data-theme="dark"] {
   padding: 24px;
 }
 
-/* Cards (optional, for consistency with Cert-Manager) */
+.dashboard-section {
+  display: none;
+}
+
+.dashboard-section.active {
+  display: block;
+}
+
+/* Einheitliche Seitenstruktur (Config, Zertifikate, ACME, …) */
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-title {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--gh-fg);
+}
+
+.page-intro {
+  margin: 0;
+  font-size: 14px;
+  color: var(--gh-fg-muted);
+  line-height: 1.5;
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+/* Sektionen: einheitlicher Abstand (24px zwischen allen Blöcken) */
+.config-section {
+  margin-bottom: 24px;
+}
+
+.config-section:last-child {
+  margin-bottom: 0;
+}
+
+.config-section-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gh-fg);
+}
+
+.config-section-intro {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: var(--gh-fg-muted);
+}
+
+/* Info-Kasten (z. B. Standard-Zertifikat): Karte mit Rahmen, 6px Radius */
+.gh-info-block {
+  padding: 16px;
+  background: var(--gh-canvas-subtle);
+  border: 1px solid var(--gh-border);
+  border-radius: 6px;
+}
+
+.gh-info-block .config-section-title {
+  margin-bottom: 8px;
+}
+
+/* Klickbare Kacheln (Frontends, Backends, Regeln): einheitlich 6px Radius */
+.gh-tile {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 16px;
+  background: var(--gh-canvas-subtle);
+  border: 1px solid var(--gh-border);
+  border-radius: 6px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.gh-tile:hover {
+  border-color: var(--gh-accent);
+  background: var(--gh-canvas);
+}
+
+.gh-tile-title {
+  margin: 8px 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gh-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gh-tile:hover .gh-tile-title {
+  color: var(--gh-accent);
+}
+
+.gh-tile-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--gh-fg-muted);
+}
+
+/* Statische Kachel (z. B. Regeln-Karte, kein Button) */
+.gh-tile-static {
+  padding: 16px;
+  background: var(--gh-canvas-subtle);
+  border: 1px solid var(--gh-border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gh-tile-static .gh-tile-actions {
+  margin-top: auto;
+  padding-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Badge: einheitlich 6px Radius, eine Höhe (nur --gh-* Farben) */
+.gh-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  border-radius: 6px;
+  background: var(--gh-canvas-subtle);
+  color: var(--gh-fg-muted);
+  border: 1px solid var(--gh-border);
+}
+
+.gh-badge--hint {
+  background: var(--gh-canvas-subtle);
+  color: var(--gh-fg);
+  border-color: var(--gh-border);
+}
+
+/* Fehlertext (überall gleich) */
+.gh-error {
+  font-size: 13px;
+  color: var(--gh-danger);
+  margin: 8px 0 0 0;
+}
+
+/* Formular-Blöcke in Modals (einheitlich) */
+.gh-form-section {
+  padding: 16px;
+  background: var(--gh-canvas-subtle);
+  border: 1px solid var(--gh-border);
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.gh-form-section:last-child {
+  margin-bottom: 0;
+}
+
+.gh-form-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gh-fg);
+}
+
+/* Grid für Kacheln (Frontends, Backends, Regeln) */
+.gh-tile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .gh-tile-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gh-tile-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .gh-tile-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Alert-Box (Fehler in Modals/Formularen) */
+.gh-alert {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid var(--gh-danger);
+  background: var(--gh-canvas-subtle);
+  color: var(--gh-danger);
+}
+
+.gh-alert-success {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid var(--gh-success);
+  background: var(--gh-canvas-subtle);
+  color: var(--gh-fg);
+}
+
+.gh-alert-warning {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid var(--gh-border);
+  background: var(--gh-canvas-subtle);
+  color: var(--gh-fg);
+}
+
+/* --------------------------------------------------------------------------
+   5) Karten
+   -------------------------------------------------------------------------- */
 .gh-card {
   background: var(--gh-canvas);
   border: 1px solid var(--gh-border);
@@ -214,16 +469,267 @@ html[data-theme="dark"] {
   border-bottom: 1px solid var(--gh-border);
   font-size: 14px;
   font-weight: 600;
+  color: var(--gh-fg);
 }
 
 .gh-card-body {
   padding: 16px;
 }
 
-/* Cert-tree: Liste der Zertifikate (Runtime + CrtLoad) */
+/* --------------------------------------------------------------------------
+   6) Summary (Grid Key-Value)
+   -------------------------------------------------------------------------- */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.summary-item dt {
+  font-size: 12px;
+  color: var(--gh-fg-muted);
+  margin: 0 0 4px 0;
+}
+
+.summary-item dd {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--gh-fg);
+}
+
+/* --------------------------------------------------------------------------
+   7) Tabellen (in .app-content; optional .gh-table-wrap für overflow)
+   -------------------------------------------------------------------------- */
+.gh-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.app-content table,
+.gh-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.app-content th,
+.app-content td,
+.gh-table-wrap th,
+.gh-table-wrap td {
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--gh-border);
+  text-align: left;
+  color: var(--gh-fg);
+}
+
+.app-content th,
+.gh-table-wrap th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--gh-fg-muted);
+  font-weight: 600;
+}
+
+.app-content tbody tr:hover td,
+.gh-table-wrap tbody tr:hover td {
+  background: var(--gh-canvas-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   8) Buttons
+   -------------------------------------------------------------------------- */
+.btn,
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  border-radius: 6px;
+  border: 1px solid var(--gh-border);
+  background: var(--gh-canvas-subtle);
+  color: var(--gh-fg);
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.btn:hover,
+a.btn:hover {
+  background: var(--gh-btn-hover);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--gh-accent);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--gh-accent);
+  color: var(--gh-on-accent);
+  border-color: var(--gh-accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--gh-accent-hover);
+  border-color: var(--gh-accent-hover);
+  color: var(--gh-on-accent);
+}
+
+.btn-secondary {
+  background: var(--gh-canvas-subtle);
+  color: var(--gh-fg);
+  border-color: var(--gh-border);
+}
+
+.btn-delete {
+  background: var(--gh-danger);
+  color: var(--gh-on-danger);
+  border-color: var(--gh-danger);
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: var(--gh-danger-hover);
+  border-color: var(--gh-danger-hover);
+  color: var(--gh-on-danger);
+}
+
+.btn-revoke {
+  background: transparent;
+  color: var(--gh-fg-muted);
+  border-color: var(--gh-border);
+}
+
+/* Kleine Buttons (Tabellen, Karten-Aktionen) */
+.btn--sm,
+.btn.btn--sm {
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.btn-view-cert,
+.btn-view-ca {
+  background: var(--gh-accent);
+  color: var(--gh-on-accent);
+  border-color: var(--gh-accent);
+}
+
+.btn-view-cert:hover:not(:disabled),
+.btn-view-ca:hover:not(:disabled) {
+  background: var(--gh-accent-hover);
+  border-color: var(--gh-accent-hover);
+  color: var(--gh-on-accent);
+}
+
+/* --------------------------------------------------------------------------
+   9) Modals
+   -------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--gh-modal-overlay);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal {
+  background: var(--gh-canvas);
+  border: 1px solid var(--gh-border);
+  border-radius: 6px;
+  box-shadow: var(--gh-modal-shadow);
+  max-width: 32rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--gh-border);
+  margin-top: 16px;
+}
+
+/* Inputs/Selects (in Modals und Formularen) */
+.gh-input,
+.gh-select {
+  width: 100%;
+  padding: 6px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--gh-fg);
+  background: var(--gh-canvas);
+  border: 1px solid var(--gh-border);
+  border-radius: 6px;
+}
+
+.gh-input:focus,
+.gh-select:focus {
+  outline: 2px solid var(--gh-accent);
+  outline-offset: 0;
+}
+
+/* --------------------------------------------------------------------------
+  10) Sonst
+  -------------------------------------------------------------------------- */
+.empty-table {
+  color: var(--gh-fg-muted);
+  font-style: italic;
+  padding: 16px;
+  text-align: center;
+  border: 1px solid var(--gh-border);
+  border-radius: 6px;
+  background: var(--gh-canvas-subtle);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.gh-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+  11) Cert-Tree (Zertifikatslisten)
+  -------------------------------------------------------------------------- */
 .cert-tree {
   list-style: none;
-  padding-left: 0;
+  padding: 0;
   margin: 0;
   border: 1px solid var(--gh-border);
   border-radius: 6px;
@@ -281,119 +787,76 @@ html[data-theme="dark"] {
   flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
 }
 
+/* Alle Buttons in cert-tree gleich hoch und mit einheitlichem Rahmen */
 .cert-tree__actions .btn {
-  padding: 2px 8px;
+  padding: 4px 10px;
   font-size: 12px;
+  line-height: 1.3;
+  min-height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--gh-border);
 }
 
+.cert-tree__actions .btn-view-cert,
+.cert-tree__actions .btn-delete {
+  border-radius: 6px;
+}
+
+/* Alle Badges einheitlich: gleiche Höhe, Padding, Radius, Rahmen */
 .cert-tree__badge {
-  display: inline-block;
-  padding: 2px 6px;
-  font-size: 10px;
-  font-weight: 600;
-  border-radius: 4px;
-  margin-right: 2px;
-  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  min-height: 22px;
+  box-sizing: border-box;
 }
 
-.cert-tree__badge--state {
-  background: var(--gh-canvas-subtle);
-  color: var(--gh-fg-muted);
-}
-
+.cert-tree__badge--state,
 .cert-tree__badge--expiry {
   background: var(--gh-canvas-subtle);
   color: var(--gh-fg-muted);
+  border-color: var(--gh-border);
+}
+
+.cert-tree__badge--expiry {
   font-weight: 500;
 }
 
 .cert-tree__badge--stored {
   background: var(--gh-success);
-  color: #fff;
+  color: var(--gh-on-accent);
+  border-color: var(--gh-success);
 }
 
 .cert-tree__badge--ram {
-  background: rgba(217, 119, 6, 0.2);
+  background: var(--gh-badge-ram);
   color: var(--gh-fg);
-}
-
-html[data-theme="dark"] .cert-tree__badge--ram {
-  background: rgba(251, 191, 36, 0.25);
-}
-
-.cert-tree__badge--used {
-  background: rgba(16, 185, 129, 0.2);
-  color: var(--gh-fg);
-}
-
-html[data-theme="dark"] .cert-tree__badge--used {
-  background: rgba(52, 211, 153, 0.25);
-  color: var(--gh-fg);
-}
-
-/* Buttons in Zertifikatslisten */
-.btn,
-a.btn {
-  display: inline-block;
-  padding: 5px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  border-radius: 6px;
-  border: 1px solid var(--gh-border);
-  background: var(--gh-canvas-subtle);
-  color: var(--gh-fg);
-  cursor: pointer;
-  text-decoration: none;
-  font-family: inherit;
-}
-
-.btn:hover,
-a.btn:hover {
-  background: var(--gh-btn-hover);
   border-color: var(--gh-border);
 }
 
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.cert-tree__badge--used {
+  background: var(--gh-badge-used);
+  color: var(--gh-fg);
+  border-color: var(--gh-border);
 }
 
-.btn-delete {
-  background: var(--gh-danger);
-  color: #fff;
-  border-color: var(--gh-danger);
-}
-
-.btn-delete:hover:not(:disabled) {
-  background: var(--gh-danger-hover);
-  border-color: var(--gh-danger-hover);
-}
-
-.btn-view-cert,
-.btn-view-ca {
-  background: var(--gh-accent);
-  color: #fff;
-  border-color: var(--gh-accent);
-}
-
-.btn-view-cert:hover:not(:disabled),
-.btn-view-ca:hover:not(:disabled) {
-  background: var(--gh-accent-hover);
-  border-color: var(--gh-accent-hover);
-}
-
-/* Leerzustand */
-.empty-table {
-  color: var(--gh-fg-muted);
-  font-style: italic;
-  padding: 16px;
-  text-align: center;
-  border: 1px solid var(--gh-border);
-  border-radius: 6px;
-  background: var(--gh-canvas-subtle);
+/* Inneres <code> in Badges entfernen – Text direkt im Badge; falls noch irgendwo genutzt: optisch anpassen */
+.cert-tree__badge code {
+  font-size: inherit;
+  font-weight: inherit;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }

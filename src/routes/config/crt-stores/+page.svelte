@@ -273,21 +273,21 @@
 </svelte:head>
 <svelte:window on:keydown={(e) => e.key === 'Escape' && viewCert && (viewCert = null)} />
 
-<h1 class="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-2">
-  Zertifikate & Stores
-</h1>
-<p class="text-sm text-slate-600 dark:text-slate-400 mb-6">
-  Stores (CrtStore) fassen Zertifikate (CrtLoad). Zertifikate können selbst hochgeladen oder per ACME verwaltet werden.
-  Ein Bind referenziert einen Store per <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">ssl_certificate</code>.
-  Stores anlegen und Zertifikate (CrtLoad) zuordnen.
-</p>
+<div class="page-header">
+  <h1 class="page-title">Zertifikate & Stores</h1>
+  <p class="page-intro">
+    Stores (CrtStore) fassen Zertifikate (CrtLoad). Zertifikate können selbst hochgeladen oder per ACME verwaltet werden.
+    Ein Bind referenziert einen Store per <code class="gh-code">ssl_certificate</code>.
+    Stores anlegen und Zertifikate (CrtLoad) zuordnen.
+  </p>
+</div>
 
 {#if data.error}
-  <p class="text-red-600 dark:text-red-400 text-sm mb-4">{data.error}</p>
+  <p class="gh-error">{data.error}</p>
 {/if}
 
 {#if ramOnlyCount > 0}
-  <div class="mb-4 flex flex-wrap items-center gap-2">
+  <div class="config-section flex flex-wrap items-center gap-2">
     <button
       type="button"
       class="btn"
@@ -301,12 +301,12 @@
   </div>
 {/if}
 {#if syncResult}
-  <div class="mb-4 text-sm">
+  <div class="config-section text-sm">
     {#if syncResult.saved.length > 0}
       <p class="text-green-700 dark:text-green-400">Gespeichert: {syncResult.saved.join(", ")}</p>
     {/if}
     {#if syncResult.errors.length > 0}
-      <p class="text-red-600 dark:text-red-400 mt-1">Fehler: {syncResult.errors.map((e) => (e.name ? `${e.name}: ${e.error}` : e.error)).join("; ")}</p>
+      <p class="gh-error">Fehler: {syncResult.errors.map((e) => (e.name ? `${e.name}: ${e.error}` : e.error)).join("; ")}</p>
     {/if}
   </div>
 {/if}
@@ -315,7 +315,7 @@
     {@const name = runtimeName(viewCert)}
     {@const state = acmeStateForRuntime(viewCert)}
     {@const inStorage = isInStorage(viewCert)}
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="modal-overlay open" style="display: flex;">
       <button
         type="button"
         class="absolute inset-0 w-full h-full border-0 cursor-default"
@@ -323,61 +323,62 @@
         on:click={() => (viewCert = null)}
       />
       <div
-        class="relative bg-[var(--gh-canvas)] border border-[var(--gh-border)] rounded-xl shadow-xl p-5 min-w-[320px] max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        class="modal relative p-5 min-w-[320px] mx-4"
+        style="max-width: 56rem;"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cert-view-modal-title"
       >
-        <h3 id="cert-view-modal-title" class="font-medium text-slate-800 dark:text-slate-100 mb-3">Zertifikat-Details</h3>
+        <h3 id="cert-view-modal-title" class="config-section-title">Zertifikat-Details</h3>
         <dl class="text-sm space-y-2">
           <div>
-            <dt class="text-slate-500 dark:text-slate-400">Name</dt>
+            <dt class="text-[var(--gh-fg-muted)]">Name</dt>
             <dd class="font-medium text-[var(--gh-fg)]">{name}</dd>
           </div>
           {#if viewCertLeaf}
             <div class="pt-2 mt-2 border-t border-[var(--gh-border)]">
-              <dt class="text-slate-500 dark:text-slate-400 font-medium mb-1">Leaf-Zertifikat (aus PEM)</dt>
+              <dt class="text-[var(--gh-fg-muted)] font-medium mb-1">Leaf-Zertifikat (aus PEM)</dt>
               <dd class="sr-only">Details des ersten Zertifikats im PEM (Server-Zertifikat)</dd>
             </div>
             <div>
-              <dt class="text-slate-500 dark:text-slate-400">Subject</dt>
+              <dt class="text-[var(--gh-fg-muted)]">Subject</dt>
               <dd class="text-[var(--gh-fg-muted)] break-all font-mono text-xs">{viewCertLeaf.subject}</dd>
             </div>
             <div>
-              <dt class="text-slate-500 dark:text-slate-400">Issuer</dt>
+              <dt class="text-[var(--gh-fg-muted)]">Issuer</dt>
               <dd class="text-[var(--gh-fg-muted)] break-all font-mono text-xs">{viewCertLeaf.issuer}</dd>
             </div>
             <div>
-              <dt class="text-slate-500 dark:text-slate-400">Seriennummer</dt>
+              <dt class="text-[var(--gh-fg-muted)]">Seriennummer</dt>
               <dd class="text-[var(--gh-fg-muted)] font-mono text-xs">{viewCertLeaf.serialNumber}</dd>
             </div>
             <div>
-              <dt class="text-slate-500 dark:text-slate-400">Gültig ab (Not Before)</dt>
+              <dt class="text-[var(--gh-fg-muted)]">Gültig ab (Not Before)</dt>
               <dd class="text-[var(--gh-fg-muted)] font-mono text-xs">{viewCertLeaf.notBefore}</dd>
             </div>
             <div>
-              <dt class="text-slate-500 dark:text-slate-400">Gültig bis (Not After)</dt>
+              <dt class="text-[var(--gh-fg-muted)]">Gültig bis (Not After)</dt>
               <dd class="text-[var(--gh-fg-muted)] font-mono text-xs">{viewCertLeaf.notAfter}</dd>
             </div>
             <div>
-              <dt class="text-slate-500 dark:text-slate-400">Fingerprint (SHA-256)</dt>
+              <dt class="text-[var(--gh-fg-muted)]">Fingerprint (SHA-256)</dt>
               <dd class="text-[var(--gh-fg-muted)] font-mono text-xs break-all">{viewCertLeaf.fingerprint256}</dd>
             </div>
             {#if viewCertLeaf.keyType ?? viewCertLeaf.keyInfo}
               <div>
-                <dt class="text-slate-500 dark:text-slate-400">Schlüsseltyp</dt>
+                <dt class="text-[var(--gh-fg-muted)]">Schlüsseltyp</dt>
                 <dd class="text-[var(--gh-fg-muted)] font-mono text-xs">{viewCertLeaf.keyType ?? "—"} {#if viewCertLeaf.keyInfo}({viewCertLeaf.keyInfo}){/if}</dd>
               </div>
             {/if}
             {#if viewCertLeaf.signatureAlgorithm}
               <div>
-                <dt class="text-slate-500 dark:text-slate-400">Signaturalgorithmus</dt>
+                <dt class="text-[var(--gh-fg-muted)]">Signaturalgorithmus</dt>
                 <dd class="text-[var(--gh-fg-muted)] font-mono text-xs">{viewCertLeaf.signatureAlgorithm}</dd>
               </div>
             {/if}
             {#if viewCertLeaf.subjectAltName}
               <div>
-                <dt class="text-slate-500 dark:text-slate-400">Subject Alternative Names</dt>
+                <dt class="text-[var(--gh-fg-muted)]">Subject Alternative Names</dt>
                 <dd class="text-[var(--gh-fg-muted)] break-all font-mono text-xs">{viewCertLeaf.subjectAltName}</dd>
               </div>
             {/if}
@@ -387,19 +388,19 @@
               {@const pos = i + 2}
               {@const label = viewCertChain.length === 2 ? "Intermediate CA (2. Zertifikat)" : pos === 2 ? "Intermediate CA (2. Zertifikat)" : pos === viewCertChain.length ? "Root CA (letztes Zertifikat)" : `${pos}. Zertifikat`}
                 <div class="pt-2 mt-2 border-t border-[var(--gh-border)]">
-                  <dt class="text-slate-500 dark:text-slate-400 font-medium mb-1">{label}</dt>
+                  <dt class="text-[var(--gh-fg-muted)] font-medium mb-1">{label}</dt>
                   <dd class="sr-only">Fingerprints und Metadaten dieses Kette-Zertifikats</dd>
                 </div>
                 <div>
-                  <dt class="text-slate-500 dark:text-slate-400">Subject</dt>
+                  <dt class="text-[var(--gh-fg-muted)]">Subject</dt>
                   <dd class="text-[var(--gh-fg-muted)] break-all font-mono text-xs">{cert.subject}</dd>
                 </div>
                 <div>
-                  <dt class="text-slate-500 dark:text-slate-400">Issuer</dt>
+                  <dt class="text-[var(--gh-fg-muted)]">Issuer</dt>
                   <dd class="text-[var(--gh-fg-muted)] break-all font-mono text-xs">{cert.issuer}</dd>
                 </div>
                 <div>
-                  <dt class="text-slate-500 dark:text-slate-400">Fingerprint (SHA-256)</dt>
+                  <dt class="text-[var(--gh-fg-muted)]">Fingerprint (SHA-256)</dt>
                   <dd class="text-[var(--gh-fg-muted)] font-mono text-xs break-all">{cert.fingerprint256}</dd>
                 </div>
             {/each}
@@ -407,74 +408,74 @@
           {#if viewCertRuntime}
             {@const dpaFields = viewCertLeaf ? certInfoFieldsDpaOnly : certInfoFieldsAll}
             <div class="pt-2 mt-2 border-t border-[var(--gh-border)]">
-              <dt class="text-slate-500 dark:text-slate-400 font-medium mb-1">HAProxy Data Plane API (Kette & Status)</dt>
-              <dd class="text-xs text-slate-500 dark:text-slate-400 mb-1">Chain Issuer/Subject = Root CA. Issuer(s) = ausstellende CA (oft Intermediate). Dazu Speicher- und Lade-Status.</dd>
+              <dt class="text-[var(--gh-fg-muted)] font-medium mb-1">HAProxy Data Plane API (Kette & Status)</dt>
+              <dd class="text-xs text-[var(--gh-fg-muted)] mb-1">Chain Issuer/Subject = Root CA. Issuer(s) = ausstellende CA (oft Intermediate). Dazu Speicher- und Lade-Status.</dd>
             </div>
             {#each dpaFields as { key, label }}
               {@const val = viewCertRuntime[key]}
               {#if val !== undefined && val !== null && val !== ""}
                 <div>
-                  <dt class="text-slate-500 dark:text-slate-400">{label}</dt>
+                  <dt class="text-[var(--gh-fg-muted)]">{label}</dt>
                   <dd class="text-[var(--gh-fg-muted)] break-all font-mono text-xs">{typeof val === "object" ? JSON.stringify(val) : String(val)}</dd>
                 </div>
               {/if}
             {/each}
           {:else if !viewCertPemLoading && !viewCertLeaf}
             <div>
-              <dt class="text-slate-500 dark:text-slate-400">Subject</dt>
+              <dt class="text-[var(--gh-fg-muted)]">Subject</dt>
               <dd class="text-[var(--gh-fg-muted)] break-all">{viewCert.subject ?? "—"}</dd>
             </div>
             <div>
-              <dt class="text-slate-500 dark:text-slate-400">CA / Issuer</dt>
+              <dt class="text-[var(--gh-fg-muted)]">CA / Issuer</dt>
               <dd class="text-[var(--gh-fg-muted)] break-all">{caDisplay(viewCert)}</dd>
             </div>
             <div>
-              <dt class="text-slate-500 dark:text-slate-400">Gültig bis (Ablauf)</dt>
+              <dt class="text-[var(--gh-fg-muted)]">Gültig bis (Ablauf)</dt>
               <dd class="text-[var(--gh-fg-muted)]">{viewCert.not_after ?? "—"}</dd>
             </div>
           {/if}
           <div>
-            <dt class="text-slate-500 dark:text-slate-400">State (ACME)</dt>
+            <dt class="text-[var(--gh-fg-muted)]">State (ACME)</dt>
             <dd><code class="text-xs bg-[var(--gh-canvas-subtle)] px-1 rounded">{state}</code></dd>
           </div>
           <div>
-            <dt class="text-slate-500 dark:text-slate-400">Speicher</dt>
+            <dt class="text-[var(--gh-fg-muted)]">Speicher</dt>
             <dd>
               {#if inStorage}
                 <span class="text-green-700 dark:text-green-400 text-xs">Gespeichert (ssl_certs_dir)</span>
               {:else}
-                <span class="text-amber-700 dark:text-amber-400 text-xs">Nur im RAM (DPA)</span>
+                <span class="gh-badge gh-badge--hint">Nur im RAM (DPA)</span>
               {/if}
             </dd>
           </div>
         </dl>
         <div class="mt-3">
-          <dt class="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">PEM / Zertifikat</dt>
+          <dt class="text-[var(--gh-fg-muted)] text-sm font-medium mb-1">PEM / Zertifikat</dt>
           {#if viewCertPemLoading}
-            <p class="text-sm text-slate-500">Lade …</p>
+            <p class="text-sm text-[var(--gh-fg-muted)]">Lade …</p>
           {:else if viewCertPem}
             {#if viewCertPemInfo}
               <div class="flex flex-wrap gap-2 mb-2">
                 {#if viewCertPemInfo.certCount > 1}
-                  <span class="inline-flex items-center rounded-md bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200" title="Mehrere Zertifikate im PEM (Leaf + Intermediate/Root)">Zertifikatskette ({viewCertPemInfo.certCount} Zertifikate)</span>
+                  <span class="gh-badge" title="Mehrere Zertifikate im PEM (Leaf + Intermediate/Root)">Zertifikatskette ({viewCertPemInfo.certCount} Zertifikate)</span>
                 {:else if viewCertPemInfo.certCount === 1}
-                  <span class="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs font-medium text-slate-700 dark:text-slate-300">Einzelzertifikat</span>
+                  <span class="gh-badge">Einzelzertifikat</span>
                 {/if}
                 {#if viewCertPemInfo.hasPrivateKey}
-                  <span class="inline-flex items-center rounded-md bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 text-xs font-medium text-amber-800 dark:text-amber-200" title="PEM enthält einen privaten Schlüssel">privater Schlüssel</span>
+                  <span class="gh-badge gh-badge--hint" title="PEM enthält einen privaten Schlüssel">privater Schlüssel</span>
                 {/if}
               </div>
             {/if}
             <pre class="text-xs bg-[var(--gh-canvas-subtle)] border border-[var(--gh-border)] rounded p-3 overflow-auto max-h-48 whitespace-pre-wrap break-all font-mono text-[var(--gh-fg-muted)]">{viewCertPem}</pre>
           {:else}
-            <p class="text-xs text-slate-500 dark:text-slate-400">Die Data Plane API liefert für dieses Zertifikat keinen PEM-Inhalt (nur Metadaten). Bei „Nur im RAM (DPA)“ ist das Zertifikat noch nicht auf Disk; bei gespeicherten Zertifikaten liegt die Datei im <code class="bg-[var(--gh-canvas-subtle)] px-1 rounded">ssl_certs_dir</code>.</p>
+            <p class="text-xs text-[var(--gh-fg-muted)]">Die Data Plane API liefert für dieses Zertifikat keinen PEM-Inhalt (nur Metadaten). Bei „Nur im RAM (DPA)“ ist das Zertifikat noch nicht auf Disk; bei gespeicherten Zertifikaten liegt die Datei im <code class="bg-[var(--gh-canvas-subtle)] px-1 rounded">ssl_certs_dir</code>.</p>
           {/if}
         </div>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">Diese Daten kommen von der HAProxy Data Plane API (Runtime).</p>
+        <p class="text-xs text-[var(--gh-fg-muted)] mt-3">Diese Daten kommen von der HAProxy Data Plane API (Runtime).</p>
         <div class="mt-4 flex justify-end">
           <button
             type="button"
-            class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+            class="btn btn-secondary"
             on:click={() => (viewCert = null)}
           >
             Schließen
@@ -484,46 +485,47 @@
     </div>
   {/if}
 
-<section class="mb-8">
-  <h2 class="font-medium text-slate-800 dark:text-slate-100 mb-2">Neuer Store</h2>
+<section class="config-section">
+  <h2 class="config-section-title">Neuer Store</h2>
   <form
     on:submit|preventDefault={submit}
     class="flex flex-wrap gap-3 items-end"
   >
     <label class="block">
-      <span class="block text-xs text-slate-500 mb-1">Name (A-Za-z0-9-_)</span>
+      <span class="block text-xs text-[var(--gh-fg-muted)] mb-1">Name (A-Za-z0-9-_)</span>
       <input
         type="text"
         bind:value={name}
         placeholder="z. B. default_store"
-        class="rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 px-2 py-1.5 text-sm w-48"
+        class="gh-input"
+        style="width: 12rem;"
       />
     </label>
     <button
       type="submit"
       disabled={submitting}
-      class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
+      class="btn btn-secondary"
     >
       {submitting ? "Wird angelegt …" : "Anlegen"}
     </button>
   </form>
   {#if submitError}
-    <p class="text-red-600 dark:text-red-400 text-sm mt-2">{submitError}</p>
+    <p class="gh-error">{submitError}</p>
   {/if}
 </section>
 
 <section>
-  <h2 class="font-medium text-slate-800 dark:text-slate-100 mb-4">Stores</h2>
+  <h2 class="config-section-title">Stores</h2>
   {#if data.stores.length === 0}
-    <p class="text-slate-500 dark:text-slate-400 text-sm">Keine Stores angelegt.</p>
+    <p class="config-section-intro" style="margin-bottom: 0;">Keine Stores angelegt.</p>
   {:else}
-    <p class="text-slate-500 dark:text-slate-400 text-sm mb-3">
+    <p class="config-section-intro">
       {data.stores.length} Store{data.stores.length === 1 ? "" : "s"} – zum Auf- und Zuklappen klicken.
     </p>
     <div class="space-y-3">
       {#each data.stores as s}
         <div
-          class="rounded-xl border border-[var(--gh-border)] bg-[var(--gh-canvas-subtle)] overflow-hidden"
+          class="border border-[var(--gh-border)] rounded-lg bg-[var(--gh-canvas-subtle)] overflow-hidden"
         >
           <button
             type="button"
@@ -532,13 +534,13 @@
             aria-expanded={expandedStores.has(s.name)}
           >
             <span
-              class="inline-block text-slate-500 dark:text-slate-400 shrink-0 transition-transform {expandedStores.has(s.name) ? 'rotate-90' : ''}"
+              class="inline-block text-[var(--gh-fg-muted)] shrink-0 transition-transform {expandedStores.has(s.name) ? 'rotate-90' : ''}"
               aria-hidden="true"
             >▶</span>
             <span class="font-semibold text-[var(--gh-fg)]">{s.name}</span>
             {#if s.name === "default"}
               <span
-                class="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 shrink-0"
+                class="gh-badge shrink-0"
                 title="Eingebauter Store mit selbstsigniertem Zertifikat; wird für HTTPS-Binds genutzt, wenn nichts anderes gewählt ist. Nicht löschbar."
               >
                 Eingebaut
@@ -553,7 +555,7 @@
             {#if s.name !== "default"}
               <button
                 type="button"
-                class="text-red-600 dark:text-red-400 hover:underline text-sm shrink-0 py-1 px-2 -m-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30"
+                class="btn btn-delete text-sm shrink-0 py-1 px-2 -m-1"
                 on:click|stopPropagation={() => doDelete(s.name)}
                 disabled={deletingName === s.name}
               >
@@ -581,6 +583,6 @@
     </div>
   {/if}
   {#if deleteError}
-    <p class="text-red-600 dark:text-red-400 text-sm mt-2">{deleteError}</p>
+    <p class="gh-error">{deleteError}</p>
   {/if}
 </section>

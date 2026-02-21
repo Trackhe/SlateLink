@@ -31,14 +31,15 @@
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="rule-modal-title"
-		class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+		class="modal-overlay open"
 		on:click={handleOverlayClick}
 		on:keydown={handleOverlayKeydown}
 		tabindex="-1"
 	>
 		<!-- svelte-ignore a11y-no-static-element-interactions a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
 		<div
-			class="bg-[var(--gh-canvas)] border border-[var(--gh-border)] rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+			class="modal"
+			style="max-width: 42rem;"
 			on:click|stopPropagation
 			role="document"
 		>
@@ -146,20 +147,16 @@
 						>
 					</div>
 					{#if ruleFormError}
-						<p class="text-sm text-red-600 dark:text-red-400">{ruleFormError}</p>
+						<p class="gh-error">{ruleFormError}</p>
 					{/if}
-					<div class="flex justify-between items-center pt-4 border-t border-[var(--gh-border)]">
-						<button
-							type="button"
-							on:click={closeRuleModal}
-							class="rounded-lg border border-[var(--gh-border)] bg-[var(--gh-canvas)] text-[var(--gh-fg)] px-4 py-2 text-sm hover:bg-[var(--gh-btn-hover)]"
-						>
+					<div class="modal-actions">
+						<button type="button" class="btn btn-secondary" on:click={closeRuleModal}>
 							Abbrechen
 						</button>
 						<button
 							type="submit"
 							disabled={ruleFormSaving || !ruleFormFrontend.trim() || !ruleFormBackend.trim()}
-							class="rounded-lg bg-[var(--gh-accent)] text-white px-4 py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50"
+							class="btn btn-primary"
 						>
 							{ruleFormSaving ? 'Speichern …' : 'Speichern'}
 						</button>

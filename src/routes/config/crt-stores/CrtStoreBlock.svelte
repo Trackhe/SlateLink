@@ -63,8 +63,9 @@
     return (acmeStatus || []).find((s) => s.certificate === fullName);
   }
 
+  /** ACME-Status für dieses Zertifikat. Leerstring, wenn kein ACME-Eintrag (z. B. eingebautes default.pem oder reines Storage-Zertifikat). */
   function getAcmeStateForCert(fullName: string): string {
-    return getAcmeStatusEntry(fullName)?.state ?? "—";
+    return getAcmeStatusEntry(fullName)?.state ?? "";
   }
 
   function getExpiryForCert(fullName: string): string | null {
@@ -363,54 +364,39 @@
 </script>
 
 {#if !compact}
-  <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-2">
+  <h2 class="config-section-title" style="font-size: 1.125rem;">
     Store: {store.name}
   </h2>
-  <p class="text-sm text-slate-600 dark:text-slate-400 mb-2">
-    <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded text-xs">crt_base</code> {store.crt_base || "—"}
+  <p class="config-section-intro">
+    <code class="gh-code">crt_base</code> {store.crt_base || "—"}
     {#if store.key_base}
-      · <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded text-xs">key_base</code> {store.key_base}
+      · <code class="gh-code">key_base</code> {store.key_base}
     {/if}
   </p>
 {/if}
 
-<section class="mb-6">
-  <h3 class="font-medium text-slate-800 dark:text-slate-100 mb-2">Zertifikat hinzufügen (CrtLoad)</h3>
+<section class="config-section">
+  <h3 class="config-section-title">Zertifikat hinzufügen (CrtLoad)</h3>
   <div class="flex flex-wrap gap-4 items-end mb-3">
     <div>
-      <label class="block text-xs text-slate-500 mb-1">Quelle</label>
-      <select
-        bind:value={addType}
-        class="rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 px-2 py-1.5 text-sm"
-      >
+      <label class="block text-xs text-[var(--gh-fg-muted)] mb-1">Quelle</label>
+      <select bind:value={addType} class="gh-select">
         <option value="storage">Storage (hochgeladenes Zertifikat)</option>
         <option value="acme">ACME (automatisch)</option>
       </select>
     </div>
     {#if addType === "storage"}
       <div>
-        <label class="block text-xs text-slate-500 mb-1">Zertifikats-Dateiname (Storage)</label>
-        <input
-          type="text"
-          bind:value={addCertificate}
-          placeholder="z. B. meinedomain.pem"
-          class="rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 px-2 py-1.5 text-sm w-48"
-        />
+        <label class="block text-xs text-[var(--gh-fg-muted)] mb-1">Zertifikats-Dateiname (Storage)</label>
+        <input type="text" bind:value={addCertificate} placeholder="z. B. meinedomain.pem" class="gh-input" style="width: 12rem;" />
       </div>
-      <button
-        type="button"
-        class="rounded-lg border border-[var(--gh-accent)] text-[var(--gh-accent)] px-3 py-2 text-sm hover:bg-[var(--gh-accent-fg)] hover:bg-opacity-10"
-        on:click={() => { showUploadModal = true; uploadError = ""; }}
-      >
+      <button type="button" class="btn btn-secondary" on:click={() => { showUploadModal = true; uploadError = ""; }}>
         Selbst hochladen
       </button>
     {:else}
       <div>
-        <label class="block text-xs text-slate-500 mb-1">ACME-Provider</label>
-        <select
-          bind:value={addAcme}
-          class="rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 px-2 py-1.5 text-sm"
-        >
+        <label class="block text-xs text-[var(--gh-fg-muted)] mb-1">ACME-Provider</label>
+        <select bind:value={addAcme} class="gh-select">
           <option value="">— wählen —</option>
           {#each acmeProviders as p}
             <option value={p}>{p}</option>
@@ -418,72 +404,35 @@
         </select>
       </div>
       <div>
-        <label class="block text-xs text-slate-500 mb-1">Certificate (Dateiname)</label>
-        <input
-          type="text"
-          bind:value={addCertificate}
-          placeholder="z. B. example.com.pem"
-          class="rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 px-2 py-1.5 text-sm w-40"
-        />
+        <label class="block text-xs text-[var(--gh-fg-muted)] mb-1">Certificate (Dateiname)</label>
+        <input type="text" bind:value={addCertificate} placeholder="z. B. example.com.pem" class="gh-input" style="width: 10rem;" />
       </div>
       <div>
-        <label class="block text-xs text-slate-500 mb-1">Domains (kommagetrennt)</label>
-        <input
-          type="text"
-          bind:value={addDomains}
-          placeholder="example.com, www.example.com"
-          class="rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 px-2 py-1.5 text-sm w-56"
-        />
+        <label class="block text-xs text-[var(--gh-fg-muted)] mb-1">Domains (kommagetrennt)</label>
+        <input type="text" bind:value={addDomains} placeholder="example.com, www.example.com" class="gh-input" style="width: 14rem;" />
       </div>
     {/if}
-    <button
-      type="button"
-      on:click={addLoad}
-      disabled={adding}
-      class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
-    >
+    <button type="button" class="btn btn-primary" on:click={addLoad} disabled={adding}>
       {adding ? "Hinzufügen …" : "Hinzufügen"}
     </button>
   </div>
   {#if addError}
-    <p class="text-red-600 dark:text-red-400 text-sm">{addError}</p>
+    <p class="gh-error">{addError}</p>
   {/if}
 </section>
 
 {#if showUploadModal}
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="upload-modal-title"
-  >
-    <div class="bg-[var(--gh-canvas)] border border-[var(--gh-border)] rounded-xl shadow-xl p-5 min-w-[320px] max-w-md">
-      <h3 id="upload-modal-title" class="font-medium text-slate-800 dark:text-slate-100 mb-3">Zertifikat hochladen und in Store „{store.name}“ legen</h3>
-      <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">PEM-Datei (Zertifikat + Key + ggf. Chain). Nach dem Upload wird das Zertifikat automatisch in diesen Store (CrtLoad) eingetragen.</p>
-      <input
-        bind:this={uploadFileInput}
-        type="file"
-        accept=".pem,.crt,.cert"
-        class="block w-full text-sm mb-3"
-      />
+  <div class="modal-overlay open" style="display: flex;" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
+    <div class="modal p-5 min-w-[320px]" style="max-width: 28rem;">
+      <h3 id="upload-modal-title" class="config-section-title">Zertifikat hochladen und in Store „{store.name}“ legen</h3>
+      <p class="config-section-intro">PEM-Datei (Zertifikat + Key + ggf. Chain). Nach dem Upload wird das Zertifikat automatisch in diesen Store (CrtLoad) eingetragen.</p>
+      <input bind:this={uploadFileInput} type="file" accept=".pem,.crt,.cert" class="block w-full text-sm mb-3" />
       {#if uploadError}
-        <p class="text-red-600 dark:text-red-400 text-sm mb-3">{uploadError}</p>
+        <p class="gh-error">{uploadError}</p>
       {/if}
-      <div class="flex gap-2 justify-end">
-        <button
-          type="button"
-          class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
-          on:click={closeUploadModal}
-          disabled={uploading}
-        >
-          Abbrechen
-        </button>
-        <button
-          type="button"
-          class="rounded-lg bg-[var(--gh-accent)] text-[var(--gh-accent-fg)] px-3 py-2 text-sm hover:opacity-90 disabled:opacity-50"
-          on:click={doUploadAndAdd}
-          disabled={uploading}
-        >
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" on:click={closeUploadModal} disabled={uploading}>Abbrechen</button>
+        <button type="button" class="btn btn-primary" on:click={doUploadAndAdd} disabled={uploading}>
           {uploading ? "Wird hochgeladen …" : "Hochladen und hinzufügen"}
         </button>
       </div>
@@ -491,17 +440,17 @@
   </div>
 {/if}
 
-<section class="mb-6">
-  <h3 class="font-medium text-slate-800 dark:text-slate-100 mb-2">ACME-Status (Runtime)</h3>
+<section class="config-section">
+  <h3 class="config-section-title">ACME-Status (Runtime)</h3>
   {#if relevantStatus.length === 0}
-    <p class="text-slate-500 dark:text-slate-400 text-sm">Kein ACME-Status für diesen Store – oder HAProxy meldet keine Einträge.</p>
+    <p class="config-section-intro" style="margin-bottom: 0;">Kein ACME-Status für diesen Store – oder HAProxy meldet keine Einträge.</p>
   {:else}
-    <ul class="border border-slate-200 dark:border-slate-600 rounded divide-y divide-slate-200 dark:divide-slate-600 text-sm mb-4">
+    <ul class="border border-[var(--gh-border)] rounded-lg divide-y divide-[var(--gh-border)] text-sm mb-4 overflow-hidden">
       {#each relevantStatus as s}
         {@const shortName = s.certificate ? String(s.certificate).replace(/^@[^/]+\//, "") : ""}
         <li class="px-3 py-2 flex flex-wrap gap-x-4 gap-y-1 items-center">
           <span class="font-medium">{s.certificate ?? ""}</span>
-          <span>State: <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">{s.state ?? "—"}</code></span>
+          <span>State: <code class="gh-code">{s.state ?? "—"}</code></span>
           {#if s.expiries_in}<span>Läuft ab in: {s.expiries_in}</span>{/if}
           {#if s.expiry_date}<span>Ablauf: {s.expiry_date}</span>{/if}
           {#if s.renewal_in}<span>Erneuerung in: {s.renewal_in}</span>{/if}
@@ -525,8 +474,8 @@
           {/if}
         </li>
         {#if s.state === "Running" && (!s.expiries_in || String(s.expiries_in).startsWith("0d"))}
-          <li class="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 text-sm col-span-full space-y-1">
-            <p><strong>„Running“ ohne Fortschritt?</strong> 1) TLS: <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">global</code> <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">httpclient.ssl.verify none</code>. 2) Fehler: <code class="bg-slate-100 dark:bg-slate-800 px-1 rounded">docker logs &lt;container&gt;</code> prüfen.</p>
+          <li class="px-3 py-2 gh-alert-warning text-sm col-span-full space-y-1">
+            <p><strong>„Running“ ohne Fortschritt?</strong> 1) TLS: <code class="gh-code">global</code> <code class="gh-code">httpclient.ssl.verify none</code>. 2) Fehler: <code class="gh-code">docker logs &lt;container&gt;</code> prüfen.</p>
           </li>
         {/if}
       {/each}
@@ -535,8 +484,8 @@
 </section>
 
 <section>
-  <h3 class="font-medium text-slate-800 dark:text-slate-100 mb-2">CrtLoad-Einträge in diesem Store</h3>
-  <p class="text-slate-500 dark:text-slate-400 text-xs mb-2">Konfigurierte Zertifikate (CrtLoad) in diesem Store. Bei ACME erscheint der Eintrag hier; nach „Zertifikat anfordern“ wird das Zertifikat in crt_base abgelegt.</p>
+  <h3 class="config-section-title">CrtLoad-Einträge in diesem Store</h3>
+  <p class="config-section-intro">Konfigurierte Zertifikate (CrtLoad) in diesem Store. Bei ACME erscheint der Eintrag hier; nach „Zertifikat anfordern“ wird das Zertifikat in crt_base abgelegt.</p>
   {#if loads.length === 0}
     <p class="empty-table">Keine Einträge. Fügen Sie oben einen CrtLoad hinzu.</p>
   {:else}
@@ -559,7 +508,9 @@
             {/if}
           </span>
           <div class="cert-tree__actions">
-            <span class="cert-tree__badge cert-tree__badge--state" title="ACME-Status"><code class="text-xs bg-[var(--gh-canvas-subtle)] px-1.5 py-0.5 rounded">{acmeState}</code></span>
+            {#if acmeState}
+              <span class="cert-tree__badge cert-tree__badge--state" title="ACME-Status">{acmeState}</span>
+            {/if}
             {#if expiry}
               <span class="cert-tree__badge cert-tree__badge--expiry" title="Gültig bis">{expiry}</span>
             {/if}
@@ -644,18 +595,18 @@
     </ul>
   {/if}
   {#if deleteError}
-    <p class="text-red-600 dark:text-red-400 text-sm mt-2">{deleteError}</p>
+    <p class="gh-error">{deleteError}</p>
   {/if}
   {#if saveToDiskError}
-    <p class="text-red-600 dark:text-red-400 text-sm mt-2">Save to disk: {saveToDiskError}</p>
+    <p class="gh-error">Save to disk: {saveToDiskError}</p>
   {/if}
   {#if saveToDiskSuccess}
-    <p class="text-green-700 dark:text-green-400 text-sm mt-2">{saveToDiskSuccess}</p>
+    <p class="text-sm mt-2" style="color: var(--gh-success);">{saveToDiskSuccess}</p>
   {/if}
   {#if renewError}
-    <p class="text-red-600 dark:text-red-400 text-sm mt-2">ACME: {renewError}</p>
+    <p class="gh-error">ACME: {renewError}</p>
   {/if}
   {#if renewSuccess}
-    <p class="text-green-700 dark:text-green-400 text-sm mt-2">{renewSuccess}</p>
+    <p class="text-sm mt-2" style="color: var(--gh-success);">{renewSuccess}</p>
   {/if}
 </section>

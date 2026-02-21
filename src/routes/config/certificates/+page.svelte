@@ -102,57 +102,52 @@
   <title>SSL-Zertifikate – SlateLink</title>
 </svelte:head>
 
-<h1 class="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-4">
-  SSL-Zertifikate
-</h1>
-<p class="text-sm text-slate-600 dark:text-slate-400 mb-6">
-  Alle Zertifikate: hochgeladene (Storage) und per ACME verwaltete. Storage-Zertifikate können in einem CrtStore (CrtLoad) oder an einem Bind verwendet werden.
-</p>
+<div class="page-header">
+  <h1 class="page-title">SSL-Zertifikate</h1>
+  <p class="page-intro">
+    Alle Zertifikate: hochgeladene (Storage) und per ACME verwaltete. Storage-Zertifikate können in einem CrtStore (CrtLoad) oder an einem Bind verwendet werden.
+  </p>
+</div>
 
 {#if data.error}
-  <p class="text-red-600 dark:text-red-400 text-sm mb-4">{data.error}</p>
+  <p class="gh-error">{data.error}</p>
 {/if}
 
-<section class="mb-8">
-  <h2 class="font-medium text-slate-800 dark:text-slate-100 mb-2">Zertifikat hochladen</h2>
-  <p class="text-xs text-slate-500 mb-2">
+<section class="config-section">
+  <h2 class="config-section-title">Zertifikat hochladen</h2>
+  <p class="config-section-intro">
     Eine PEM-Datei (Zertifikat, privater Schlüssel und ggf. Intermediate-Chain zusammengefügt).
   </p>
-  <div class="flex flex-wrap gap-3 items-end">
+  <div class="flex flex-wrap gap-3 items-center">
     <input
       bind:this={fileInput}
       type="file"
       accept=".pem,.crt,.cert"
-      class="text-sm"
+      class="text-sm file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border file:border-[var(--gh-border)] file:bg-[var(--gh-canvas-subtle)] file:text-sm file:text-[var(--gh-fg)] file:cursor-pointer hover:file:bg-[var(--gh-btn-hover)]"
     />
-    <button
-      type="button"
-      on:click={upload}
-      disabled={uploading}
-      class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
-    >
+    <button type="button" class="btn btn-primary" on:click={upload} disabled={uploading}>
       {uploading ? "Wird hochgeladen …" : "Hochladen"}
     </button>
   </div>
   {#if uploadError}
-    <p class="text-red-600 dark:text-red-400 text-sm mt-2">{uploadError}</p>
+    <p class="gh-error">{uploadError}</p>
   {/if}
 </section>
 
-<section>
-  <h2 class="font-medium text-slate-800 dark:text-slate-100 mb-2">Alle Zertifikate</h2>
+<section class="config-section">
+  <h2 class="config-section-title">Alle Zertifikate</h2>
   {#if loadedCerts.length > 0}
-    <p class="text-xs text-[var(--gh-fg-muted)] mb-2">Geladene Zertifikate von HAProxy (inkl. Subject und ausstellende CA/Chain).</p>
+    <p class="config-section-intro">Geladene Zertifikate von HAProxy (inkl. Subject und ausstellende CA/Chain).</p>
     <div class="border border-[var(--gh-border)] rounded-lg overflow-hidden overflow-x-auto">
       <table class="w-full text-sm text-left">
-        <thead class="bg-[var(--gh-canvas-subtle)] text-[var(--gh-fg)]">
+        <thead class="bg-[var(--gh-canvas-subtle)]">
           <tr>
-            <th class="px-3 py-2 font-medium">Name</th>
-            <th class="px-3 py-2 font-medium">Subject</th>
-            <th class="px-3 py-2 font-medium">CA / Issuer</th>
-            <th class="px-3 py-2 font-medium">Ablauf</th>
-            <th class="px-3 py-2 font-medium">State</th>
-            <th class="px-3 py-2 font-medium w-40">Aktionen</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--gh-fg-muted)]">Name</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--gh-fg-muted)]">Subject</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--gh-fg-muted)]">CA / Issuer</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--gh-fg-muted)]">Ablauf</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--gh-fg-muted)]">State</th>
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[var(--gh-fg-muted)] w-40">Aktionen</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[var(--gh-border)]">
@@ -160,25 +155,31 @@
             {@const name = runtimeName(r)}
             {@const state = acmeStateForRuntime(r)}
             {@const inStorage = isInStorage(r)}
-            <tr class="bg-[var(--gh-canvas)] hover:bg-[var(--gh-btn-hover)]">
-              <td class="px-3 py-2 font-medium">{name}</td>
-              <td class="px-3 py-2 text-[var(--gh-fg-muted)] max-w-[200px] truncate" title={r.subject ?? ""}>{r.subject ?? "—"}</td>
-              <td class="px-3 py-2 text-[var(--gh-fg-muted)] max-w-[200px] truncate" title={caDisplay(r)}>{caDisplay(r)}</td>
-              <td class="px-3 py-2 text-[var(--gh-fg-muted)]">{r.not_after ?? "—"}</td>
-              <td class="px-3 py-2"><code class="text-xs bg-[var(--gh-canvas-subtle)] px-1 rounded">{state}</code></td>
-              <td class="px-3 py-2">
-                {#if inStorage}
-                  <button
-                    type="button"
-                    class="text-red-600 dark:text-red-400 hover:underline text-xs"
-                    on:click={() => doDelete(name)}
-                    disabled={deleteName === name}
-                  >
-                    Löschen
-                  </button>
-                {:else}
-                  <a href="/config/crt-stores" class="text-[var(--gh-accent)] hover:underline text-xs">Im Store verwalten</a>
-                {/if}
+            <tr class="bg-[var(--gh-canvas)] hover:bg-[var(--gh-canvas-subtle)]">
+              <td class="px-4 py-3 font-medium text-[var(--gh-fg)]">{name}</td>
+              <td class="px-4 py-3 text-[var(--gh-fg-muted)] max-w-[200px] truncate" title={r.subject ?? ""}>{r.subject ?? "—"}</td>
+              <td class="px-4 py-3 text-[var(--gh-fg-muted)] max-w-[200px] truncate" title={caDisplay(r)}>{caDisplay(r)}</td>
+              <td class="px-4 py-3 text-[var(--gh-fg-muted)]">{r.not_after ?? "—"}</td>
+              <td class="px-4 py-3">
+                <span class="gh-badge">{state}</span>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex flex-wrap gap-2 items-center">
+                  {#if inStorage}
+                    <button
+                      type="button"
+                      class="btn btn-delete btn--sm"
+                      on:click={() => doDelete(name)}
+                      disabled={deleteName === name}
+                    >
+                      Löschen
+                    </button>
+                  {:else}
+                    <a href="/config/crt-stores" class="btn btn-secondary btn--sm">
+                      Im Store verwalten
+                    </a>
+                  {/if}
+                </div>
               </td>
             </tr>
           {/each}
@@ -186,9 +187,9 @@
       </table>
     </div>
   {:else}
-    <p class="text-slate-500 dark:text-slate-400 text-sm">Nur geladene Zertifikate werden angezeigt. Aktuell keine.</p>
+    <p class="config-section-intro" style="margin-bottom: 0;">Nur geladene Zertifikate werden angezeigt. Aktuell keine.</p>
   {/if}
   {#if deleteError}
-    <p class="text-red-600 dark:text-red-400 text-sm mt-2">{deleteError}</p>
+    <p class="gh-error">{deleteError}</p>
   {/if}
 </section>

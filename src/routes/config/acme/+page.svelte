@@ -175,87 +175,83 @@
   <title>ACME-Provider – SlateLink</title>
 </svelte:head>
 
-<h1 class="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-4">
-  ACME-Provider
-</h1>
-<p class="text-sm text-slate-600 dark:text-slate-400 mb-6">
-  Automatische TLS-Zertifikate (z. B. Let's Encrypt). Ein ACME-Provider wird in einem
-  Zertifikat-Store (CrtLoad) referenziert. Die Data Plane API akzeptiert nur
-  <strong>HTTPS</strong>-Directory-URLs. Für einen HTTP-ACME-Server (z. B. lokaler Pebble/ACME-Test)
-  einen lokalen HTTPS-Proxy vorschalten (z. B. Caddy/nginx mit Proxy zu <code>http://…</code>).
-</p>
+<div class="page-header">
+  <h1 class="page-title">ACME-Provider</h1>
+  <p class="page-intro">
+    Automatische TLS-Zertifikate (z. B. Let's Encrypt). Ein ACME-Provider wird in einem
+    Zertifikat-Store (CrtLoad) referenziert. Die Data Plane API akzeptiert nur
+    <strong>HTTPS</strong>-Directory-URLs. Für einen HTTP-ACME-Server (z. B. lokaler Pebble/ACME-Test)
+    einen lokalen HTTPS-Proxy vorschalten (z. B. Caddy/nginx mit Proxy zu <code class="gh-code">http://…</code>).
+  </p>
+</div>
 
 {#if data.error}
-  <p class="text-red-600 dark:text-red-400 text-sm mb-4">{data.error}</p>
+  <p class="gh-error">{data.error}</p>
 {/if}
 
-<section class="mb-8">
-  <h2 class="font-medium text-slate-800 dark:text-slate-100 mb-2">Neuer ACME-Provider</h2>
+<section class="config-section">
+  <h2 class="config-section-title">Neuer ACME-Provider</h2>
   <form
     on:submit|preventDefault={submit}
     class="flex flex-wrap gap-3 items-end"
   >
     <div>
-      <label class="block text-xs text-slate-500 mb-1">Name</label>
+      <label class="block text-xs text-[var(--gh-fg-muted)] mb-1">Name</label>
       <input
         type="text"
         bind:value={name}
         placeholder="z. B. letsencrypt"
-        class="rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 px-2 py-1.5 text-sm w-40"
+        class="gh-input"
+        style="width: 10rem;"
       />
     </div>
     <div class="flex-1 min-w-[280px]">
-      <label class="block text-xs text-slate-500 mb-1">Directory-URL</label>
+      <label class="block text-xs text-[var(--gh-fg-muted)] mb-1">Directory-URL</label>
       <input
         type="url"
         bind:value={directory}
         placeholder="https://acme-v02.api.letsencrypt.org/directory"
-        class="w-full rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 px-2 py-1.5 text-sm"
+        class="gh-input"
       />
     </div>
     <div>
-      <label class="block text-xs text-slate-500 mb-1">Key-Typ</label>
-      <select
-        bind:value={keytype}
-        class="rounded border border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 px-2 py-1.5 text-sm"
-      >
+      <label class="block text-xs text-[var(--gh-fg-muted)] mb-1">Key-Typ</label>
+      <select bind:value={keytype} class="gh-select">
         <option value="RSA">RSA</option>
         <option value="ECDSA">ECDSA</option>
       </select>
     </div>
-    <button
-      type="submit"
-      disabled={submitting}
-      class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50"
-    >
+    <button type="submit" class="btn btn-primary" disabled={submitting}>
       {submitting ? "Wird angelegt …" : "Anlegen"}
     </button>
   </form>
   {#if submitError}
-    <p class="text-red-600 dark:text-red-400 text-sm mt-2">{submitError}</p>
+    <p class="gh-error">{submitError}</p>
   {/if}
 </section>
 
-<section>
-  <h2 class="font-medium text-slate-800 dark:text-slate-100 mb-2">Vorhandene ACME-Provider</h2>
+<section class="config-section">
+  <h2 class="config-section-title">Vorhandene ACME-Provider</h2>
   {#if data.providers.length === 0}
-    <p class="text-slate-500 dark:text-slate-400 text-sm">Keine ACME-Provider angelegt.</p>
+    <p class="config-section-intro" style="margin-bottom: 0;">Keine ACME-Provider angelegt.</p>
   {:else}
-    <ul class="border border-slate-200 dark:border-slate-600 rounded divide-y divide-slate-200 dark:divide-slate-600">
+    <ul class="border border-[var(--gh-border)] rounded-lg divide-y divide-[var(--gh-border)] overflow-hidden">
       {#each data.providers as p}
-        <li class="flex items-center justify-between px-3 py-2 text-sm">
-          <span class="font-medium">{p.name}</span>
-          <span class="text-slate-500 dark:text-slate-400 truncate ml-2">{p.directory ?? ""}</span>
+        <li class="flex items-center justify-between px-4 py-3 text-sm bg-[var(--gh-canvas)] hover:bg-[var(--gh-canvas-subtle)]">
+          <span class="font-medium text-[var(--gh-fg)]">{p.name}</span>
+          <span class="text-[var(--gh-fg-muted)] truncate ml-2">{p.directory ?? ""}</span>
           <button
             type="button"
-            class="text-slate-600 dark:text-slate-300 hover:underline ml-2"
+            class="btn btn-secondary ml-2"
+            style="padding: 4px 8px; font-size: 12px;"
             on:click={() => openEditModal(p.name)}
           >
             Bearbeiten
           </button>
           <button
             type="button"
-            class="text-red-600 dark:text-red-400 hover:underline ml-2"
+            class="btn btn-delete ml-2"
+            style="padding: 4px 8px; font-size: 12px;"
             on:click={() => doDelete(p.name)}
             disabled={deleteName === p.name}
           >
@@ -266,7 +262,7 @@
     </ul>
   {/if}
   {#if deleteError}
-    <p class="text-red-600 dark:text-red-400 text-sm mt-2">{deleteError}</p>
+    <p class="gh-error">{deleteError}</p>
   {/if}
 </section>
 
@@ -278,14 +274,15 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="acme-edit-modal-title"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+    class="modal-overlay open"
     on:click={handleEditModalOverlayClick}
     on:keydown={handleEditModalKeydown}
     tabindex="-1"
   >
     <!-- svelte-ignore a11y-no-static-element-interactions a11y-no-noninteractive-element-interactions a11y-click-events-have-key-events -->
     <div
-      class="bg-[var(--gh-canvas)] border border-[var(--gh-border)] rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      class="modal"
+      style="max-width: 42rem;"
       on:click|stopPropagation
       role="document"
     >
@@ -308,27 +305,17 @@
         {#if editLoading}
           <p class="text-[var(--gh-fg-muted)] text-sm">Wird geladen …</p>
         {:else if editFetchError}
-          <p class="text-red-600 dark:text-red-400 text-sm mb-2">{editFetchError}</p>
-          <button
-            type="button"
-            class="rounded-lg border border-[var(--gh-border)] px-3 py-2 text-sm text-[var(--gh-fg)] bg-[var(--gh-canvas-subtle)] hover:bg-[var(--gh-btn-hover)]"
-            on:click={closeEditModal}
-          >
+          <p class="gh-error">{editFetchError}</p>
+          <button type="button" class="btn btn-secondary" on:click={closeEditModal}>
             Schließen
           </button>
         {:else if editProvider}
           <form on:submit|preventDefault={saveEdit} class="space-y-5">
             {#if editSaveError}
-              <div
-                class="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-800 dark:text-red-300 text-sm"
-              >
-                {editSaveError}
-              </div>
+              <div class="gh-alert">{editSaveError}</div>
             {/if}
-            <section
-              class="rounded-lg border border-[var(--gh-border)] p-4 bg-[var(--gh-canvas-subtle)]"
-            >
-              <h3 class="font-medium text-[var(--gh-fg)] mb-3">ACME-Provider</h3>
+            <section class="gh-form-section">
+              <h3>ACME-Provider</h3>
               <div class="grid gap-3 sm:grid-cols-2">
                 <label class="block">
                   <span class="text-sm text-[var(--gh-fg-muted)]">Name (nur Anzeige)</span>
@@ -359,7 +346,7 @@
                 />
               </label>
               {#if editDirectory && /localhost|127\.0\.0\.1/i.test(editDirectory)}
-                <p class="mt-2 rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 text-sm px-3 py-2">
+                <p class="mt-2 gh-alert-warning">
                   <strong>Hinweis:</strong> HAProxy läuft im Container. Dort ist <code>localhost</code> der Container, nicht dein Rechner. Statt <code>https://localhost:3001/…</code> z. B. <code>https://host.docker.internal:3001/acme/directory</code> verwenden.
                 </p>
               {/if}

@@ -35,4 +35,11 @@ certbot/*.pem
 
 # Data directories
 data/
-haproxy/
+
+# HAProxy: Ordner ignorieren, außer diese Dateien
+haproxy/*
+!haproxy/haproxy.cfg
+!haproxy/dataplaneapi.yml
+!haproxy/ssl/
+haproxy/ssl/*
+!haproxy/ssl/domain_mapping.txt

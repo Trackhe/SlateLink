@@ -68,60 +68,59 @@
   }
 </script>
 
-<div class="mb-4">
-  <a href="/config" class="text-slate-600 hover:text-slate-900 text-sm">← Config</a>
+<div class="page-header">
+  <a href="/config" class="text-sm text-[var(--gh-fg-muted)] hover:text-[var(--gh-fg)]">← Config</a>
+  <h1 class="page-title">Neuen Proxy anlegen</h1>
+  <p class="page-intro">
+    Legt ein neues Frontend (Listen-Port), ein Backend und Server an – ähnlich Nginx Proxy Manager. Optionen: Client-IP-Weitergabe (X-Forwarded-For), WebSocket (lange Timeouts), X-Forwarded-Proto für HTTPS.
+  </p>
 </div>
 
-<h1 class="text-2xl font-semibold mb-2">Neuen Proxy anlegen</h1>
-<p class="text-slate-600 mb-6">
-  Legt ein neues Frontend (Listen-Port), ein Backend und Server an – ähnlich Nginx Proxy Manager. Optionen: Client-IP-Weitergabe (X-Forwarded-For), WebSocket (lange Timeouts), X-Forwarded-Proto für HTTPS.
-</p>
-
 {#if error}
-  <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">{error}</div>
+  <div class="gh-alert config-section">{error}</div>
 {/if}
 
 <form on:submit|preventDefault={submit} class="space-y-6 max-w-2xl">
-  <section class="rounded-lg border border-slate-200 p-4 bg-slate-50/50">
-    <h2 class="font-medium text-slate-800 mb-3">Frontend (Eingang)</h2>
+  <section class="gh-form-section">
+    <h3>Frontend (Eingang)</h3>
     <div class="grid gap-3">
       <label class="block">
-        <span class="text-sm text-slate-600">Name</span>
-        <input type="text" bind:value={frontendName} class="mt-1 block w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="z. B. myapp_front" />
+        <span class="text-sm text-[var(--gh-fg-muted)]">Name</span>
+        <input type="text" bind:value={frontendName} class="gh-input mt-1 block w-full" placeholder="z. B. myapp_front" />
       </label>
       <div class="grid grid-cols-2 gap-3">
         <label class="block">
-          <span class="text-sm text-slate-600">Bind-Adresse</span>
-          <input type="text" bind:value={bindAddress} class="mt-1 block w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="*" />
+          <span class="text-sm text-[var(--gh-fg-muted)]">Bind-Adresse</span>
+          <input type="text" bind:value={bindAddress} class="gh-input mt-1 block w-full" placeholder="*" />
         </label>
         <label class="block">
-          <span class="text-sm text-slate-600">Port</span>
-          <input type="number" bind:value={bindPort} min="1" max="65535" class="mt-1 block w-full rounded border border-slate-300 px-3 py-2 text-sm" />
+          <span class="text-sm text-[var(--gh-fg-muted)]">Port</span>
+          <input type="number" bind:value={bindPort} min="1" max="65535" class="gh-input mt-1 block w-full" />
         </label>
       </div>
     </div>
   </section>
 
-  <section class="rounded-lg border border-slate-200 p-4 bg-slate-50/50">
-    <h2 class="font-medium text-slate-800 mb-3">Backend & Server</h2>
+  <section class="gh-form-section">
+    <h3>Backend & Server</h3>
     <label class="block mb-3">
-      <span class="text-sm text-slate-600">Backend-Name</span>
-      <input type="text" bind:value={backendName} class="mt-1 block w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="z. B. myapp_backend" />
+      <span class="text-sm text-[var(--gh-fg-muted)]">Backend-Name</span>
+      <input type="text" bind:value={backendName} class="gh-input mt-1 block w-full" placeholder="z. B. myapp_backend" />
     </label>
-    <p class="text-sm text-slate-600 mb-2">Server (Adresse:Port, z. B. host.docker.internal:3000)</p>
+    <p class="text-sm text-[var(--gh-fg-muted)] mb-2">Server (Adresse:Port, z. B. host.docker.internal:3000)</p>
     {#each servers as srv, i}
       <div class="flex gap-2 items-end mb-2">
-        <input type="text" bind:value={srv.name} placeholder="Name" class="w-24 rounded border border-slate-300 px-2 py-1.5 text-sm" />
-        <input type="text" bind:value={srv.address} placeholder="Adresse" class="flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm" />
-        <input type="number" bind:value={srv.port} min="1" max="65535" class="w-20 rounded border border-slate-300 px-2 py-1.5 text-sm" />
-        <button type="button" on:click={() => removeServer(i)} class="text-slate-500 hover:text-red-600 text-sm" title="Server entfernen">✕</button>
+        <input type="text" bind:value={srv.name} placeholder="Name" class="gh-input w-24" />
+        <input type="text" bind:value={srv.address} placeholder="Adresse" class="gh-input flex-1" />
+        <input type="number" bind:value={srv.port} min="1" max="65535" class="gh-input w-20" />
+        <button type="button" on:click={() => removeServer(i)} class="text-[var(--gh-fg-muted)] hover:text-[var(--gh-danger)] text-sm" title="Server entfernen">✕</button>
       </div>
     {/each}
-    <button type="button" on:click={addServer} class="text-sm text-slate-600 hover:text-slate-900 underline">+ Server hinzufügen</button>
+    <button type="button" on:click={addServer} class="text-sm text-[var(--gh-fg-muted)] hover:text-[var(--gh-fg)] underline">+ Server hinzufügen</button>
   </section>
 
-  <section class="rounded-lg border border-slate-200 p-4 bg-slate-50/50">
-    <h2 class="font-medium text-slate-800 mb-3">Optionen</h2>
+  <section class="gh-form-section">
+    <h3>Optionen</h3>
     <ul class="space-y-2 text-sm">
       <li class="flex items-center gap-2">
         <input type="checkbox" bind:checked={forwardClientIp} id="opt-forward" />
@@ -139,9 +138,9 @@
   </section>
 
   <div class="flex gap-3">
-    <button type="submit" disabled={busy} class="rounded-lg bg-slate-800 text-white px-4 py-2 text-sm font-medium hover:bg-slate-700 disabled:opacity-50">
+    <button type="submit" disabled={busy} class="btn btn-primary">
       {busy ? 'Wird angelegt …' : 'Proxy anlegen'}
     </button>
-    <a href="/config" class="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Abbrechen</a>
+    <a href="/config" class="btn btn-secondary">Abbrechen</a>
   </div>
 </form>

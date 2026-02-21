@@ -129,75 +129,53 @@
   }
 </script>
 
-<div class="mb-4">
-  <a href="/config" class="text-slate-600 hover:text-slate-900 text-sm"
-    >← Config</a
-  >
+<div class="page-header">
+  <a href="/config" class="text-sm text-[var(--gh-fg-muted)] hover:text-[var(--gh-fg)]">← Config</a>
+  <h1 class="page-title">Frontend: {data.frontend?.name ?? data.error ?? "—"}</h1>
 </div>
 
-<h1 class="text-2xl font-semibold mb-2">
-  Frontend: {data.frontend?.name ?? data.error ?? "—"}
-</h1>
-
 {#if data.error}
-  <p class="text-red-600 text-sm">{data.error}</p>
+  <p class="gh-error">{data.error}</p>
 {:else if data.frontend}
-  <section class="mb-6">
-    <h2 class="font-medium text-slate-800 mb-2">Frontend bearbeiten</h2>
-    <div class="flex flex-wrap items-end gap-3">
-      <label class="block">
-        <span class="text-sm text-slate-600">Name (nur Anzeige)</span>
-        <input
-          type="text"
-          value={data.frontend.name}
-          disabled
-          class="mt-1 block w-48 rounded border border-slate-300 bg-slate-100 px-2 py-1.5 text-sm"
-        />
-      </label>
-      <label class="block">
-        <span class="text-sm text-slate-600">Backend</span>
-        <select
-          bind:value={defaultBackend}
-          class="mt-1 block rounded border border-slate-300 px-2 py-1.5 text-sm bg-white"
-        >
-          <option value="">– wählen –</option>
-          {#each data.backends as b}
-            <option value={b.name}>{b.name}</option>
-          {/each}
-        </select>
-      </label>
-      <button
-        type="button"
-        class="rounded-lg bg-slate-800 text-white px-3 py-2 text-sm hover:bg-slate-700 disabled:opacity-50"
-        disabled={saving}
-        on:click={saveFrontend}
-      >
-        {saving ? "Speichern …" : "Speichern"}
-      </button>
+  <section class="config-section">
+    <div class="gh-form-section">
+      <h3>Frontend bearbeiten</h3>
+      <div class="flex flex-wrap items-end gap-3">
+        <label class="block">
+          <span class="text-sm text-[var(--gh-fg-muted)]">Name (nur Anzeige)</span>
+          <input type="text" value={data.frontend.name} disabled class="gh-input mt-1 block w-48" />
+        </label>
+        <label class="block">
+          <span class="text-sm text-[var(--gh-fg-muted)]">Backend</span>
+          <select bind:value={defaultBackend} class="gh-select mt-1 block">
+            <option value="">– wählen –</option>
+            {#each data.backends as b}
+              <option value={b.name}>{b.name}</option>
+            {/each}
+          </select>
+        </label>
+        <button type="button" class="btn btn-primary" disabled={saving} on:click={saveFrontend}>
+          {saving ? "Speichern …" : "Speichern"}
+        </button>
+      </div>
+      {#if saveError}
+        <p class="gh-error">{saveError}</p>
+      {/if}
     </div>
-    {#if saveError}
-      <p class="text-red-600 text-sm mt-2">{saveError}</p>
-    {/if}
   </section>
 
-  <section class="mb-6">
-    <h2 class="font-medium text-slate-800 mb-2">Binds (Listen-Adressen)</h2>
+  <section class="config-section">
+    <h2 class="config-section-title">Binds (Listen-Adressen)</h2>
     {#if data.binds.length > 0}
-      <ul
-        class="border border-slate-200 rounded divide-y divide-slate-200 mb-3"
-      >
+      <ul class="border border-[var(--gh-border)] rounded-lg divide-y divide-[var(--gh-border)] mb-3 overflow-hidden">
         {#each data.binds as bind}
           {@const bindName = bind.name ?? `bind_${bind.port ?? ""}`}
-          <li
-            class="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 text-sm"
-          >
-            <span class="font-medium">{bindName}</span>
-            <span class="text-slate-500"
-              >{bind.address ?? "*"}:{bind.port ?? ""}</span
-            >
+          <li class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 text-sm bg-[var(--gh-canvas)] hover:bg-[var(--gh-canvas-subtle)]">
+            <span class="font-medium text-[var(--gh-fg)]">{bindName}</span>
+            <span class="text-[var(--gh-fg-muted)]">{bind.address ?? "*"}:{bind.port ?? ""}</span>
             <button
               type="button"
-              class="text-slate-500 hover:text-red-600 text-xs ml-auto"
+              class="text-[var(--gh-fg-muted)] hover:text-[var(--gh-danger)] text-xs ml-auto"
               on:click={() => removeBind(String(bindName))}
               title="Bind entfernen"
             >
@@ -207,55 +185,27 @@
         {/each}
       </ul>
     {:else}
-      <p class="text-slate-500 text-sm mb-2">
-        Keine Binds. Mindestens einen hinzufügen (Adresse:Port).
-      </p>
+      <p class="config-section-intro" style="margin-bottom: 0;">Keine Binds. Mindestens einen hinzufügen (Adresse:Port).</p>
     {/if}
     <div class="flex flex-wrap gap-2 items-end">
-      <input
-        type="text"
-        bind:value={addBindName}
-        placeholder="Name (optional)"
-        class="w-32 rounded border border-slate-300 px-2 py-1.5 text-sm"
-      />
-      <input
-        type="text"
-        bind:value={addBindAddress}
-        placeholder="Adresse"
-        class="w-32 rounded border border-slate-300 px-2 py-1.5 text-sm"
-      />
-      <input
-        type="number"
-        bind:value={addBindPort}
-        min="1"
-        max="65535"
-        class="w-24 rounded border border-slate-300 px-2 py-1.5 text-sm"
-      />
-      <button
-        type="button"
-        class="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50 disabled:opacity-50"
-        disabled={addingBind}
-        on:click={addBind}
-      >
+      <input type="text" bind:value={addBindName} placeholder="Name (optional)" class="gh-input w-32" />
+      <input type="text" bind:value={addBindAddress} placeholder="Adresse" class="gh-input w-32" />
+      <input type="number" bind:value={addBindPort} min="1" max="65535" class="gh-input w-24" />
+      <button type="button" class="btn btn-secondary" disabled={addingBind} on:click={addBind}>
         {addingBind ? "Hinzufügen …" : "Bind hinzufügen"}
       </button>
     </div>
     {#if addBindError}
-      <p class="text-red-600 text-sm mt-2">{addBindError}</p>
+      <p class="gh-error">{addBindError}</p>
     {/if}
   </section>
 
   {#if deleteError}
-    <p class="text-red-600 text-sm mb-2">{deleteError}</p>
+    <p class="gh-error">{deleteError}</p>
   {/if}
-  <button
-    type="button"
-    class="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800 hover:bg-red-100 disabled:opacity-50"
-    disabled={deleting}
-    on:click={doDelete}
-  >
+  <button type="button" class="btn btn-delete" disabled={deleting} on:click={doDelete}>
     {deleting ? "Wird gelöscht …" : "Frontend löschen"}
   </button>
 {:else}
-  <p class="text-slate-500">Nicht gefunden.</p>
+  <p class="config-section-intro" style="margin-bottom: 0;">Nicht gefunden.</p>
 {/if}

@@ -66,68 +66,45 @@
   }
 </script>
 
-<h1 class="text-2xl font-semibold mb-2 text-[var(--gh-fg)]">SlateLink</h1>
-<p class="text-[var(--gh-fg-muted)] mb-6">
-  Willkommen. Anbindung an die HAProxy Data Plane API (Control Plane).
-  Statistiken unten zeigen den aktuellen Laufzeitstand von Frontends, Backends
-  und Servern.
-  <span class="block mt-2 text-sm opacity-90"
-    >Du musst diese App (SlateLink) aufrufen, z. B. <code
-      class="bg-[var(--gh-canvas-subtle)] px-1 rounded border border-[var(--gh-border)]"
-      >http://localhost:3001</code
-    >. Wenn du nur über HAProxy (z. B. localhost:80) gehst und dort ein anderer
-    Dienst (z. B. Port 3000) hängt, siehst du dort nicht dieses Dashboard.</span
-  >
-</p>
+<div class="page-header">
+  <h1 class="page-title">SlateLink</h1>
+  <p class="page-intro">
+    Willkommen. Anbindung an die HAProxy Data Plane API (Control Plane).
+    Statistiken unten zeigen den aktuellen Laufzeitstand von Frontends, Backends
+    und Servern.
+    <span class="block mt-2 text-sm opacity-90"
+      >Du musst diese App (SlateLink) aufrufen, z. B. <code class="gh-code"
+        >http://localhost:3001</code
+      >. Wenn du nur über HAProxy (z. B. localhost:80) gehst und dort ein anderer
+      Dienst (z. B. Port 3000) hängt, siehst du dort nicht dieses Dashboard.</span
+    >
+  </p>
+</div>
 
 {#if data.error}
-  <div
-    class="rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 p-4"
-  >
-    <div class="flex items-center gap-2 mb-2">
-      <span
-        class="inline-flex h-3 w-3 rounded-full bg-red-500"
-        aria-hidden="true"
-      ></span>
-      <span class="font-medium text-red-800 dark:text-red-300"
-        >Control Plane nicht erreichbar</span
-      >
-    </div>
-    <p class="text-red-700 dark:text-red-400 text-sm">{data.error}</p>
-    <p class="text-red-600 dark:text-red-500 text-xs mt-2">
-      Prüfe <code class="bg-red-100 dark:bg-red-900/50 px-1 rounded"
-        >DATAPLANE_API_URL</code
-      > in .env (z. B. http://localhost:5555) und ob die Data Plane API läuft.
+  <div class="gh-alert config-section">
+    <p class="font-medium mb-2">Control Plane nicht erreichbar</p>
+    <p>{data.error}</p>
+    <p class="text-sm mt-2">
+      Prüfe <code class="gh-code">DATAPLANE_API_URL</code> in .env (z. B. http://localhost:5555) und ob die Data Plane API läuft.
     </p>
   </div>
 {:else if data.data}
-  <div
-    class="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 p-4 mb-6"
-  >
-    <div class="flex items-center gap-2 mb-3">
-      <span
-        class="inline-flex h-3 w-3 rounded-full bg-emerald-500 animate-pulse"
-        aria-hidden="true"
-      ></span>
-      <span class="font-medium text-emerald-800 dark:text-emerald-300"
-        >Control Plane erreichbar</span
-      >
-    </div>
-    <dl
-      class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm text-emerald-900 dark:text-emerald-200"
-    >
+  <div class="gh-alert-success config-section">
+    <p class="font-medium mb-2">Control Plane erreichbar</p>
+    <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
       {#if data.data.version}
-        <dt class="text-emerald-700 dark:text-emerald-400">Version</dt>
+        <dt class="text-[var(--gh-fg-muted)]">Version</dt>
         <dd>{data.data.version}</dd>
       {/if}
       {#if data.data.api_version}
-        <dt class="text-emerald-700 dark:text-emerald-400">API</dt>
+        <dt class="text-[var(--gh-fg-muted)]">API</dt>
         <dd>{data.data.api_version}</dd>
       {/if}
     </dl>
     <button
       type="button"
-      class="mt-3 text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 underline"
+      class="mt-3 text-sm text-[var(--gh-accent)] hover:underline"
       on:click={() => (showRaw = !showRaw)}
     >
       {showRaw ? "Raw JSON ausblenden" : "Raw JSON anzeigen"}
@@ -142,29 +119,23 @@
     {/if}
   </div>
 
-  <section class="mb-6">
-    <h2 class="text-lg font-medium mb-2 text-[var(--gh-fg)]">
+  <section class="config-section">
+    <h2 class="config-section-title">
       HAProxy-Statistiken (Live)
       <span class="text-[var(--gh-fg-muted)] font-normal text-sm"
         >– Aktualisierung alle {LIVE_REFRESH_MS / 1000} s</span
       >
     </h2>
     {#if data.statsError}
-      <p
-        class="text-amber-700 dark:text-amber-400 text-sm bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3"
-      >
-        Statistiken nicht verfügbar: {data.statsError}
-      </p>
-      <p class="text-[var(--gh-fg-muted)] text-xs mt-2">
-        Prüfe: Data Plane API läuft (z. B. im HAProxy-Container), <code
-          class="bg-[var(--gh-canvas-subtle)] px-1 rounded border border-[var(--gh-border)]"
-          >DATAPLANE_API_URL</code
-        > in .env zeigt auf die DPA (z. B. http://localhost:5555).
-      </p>
+      <div class="gh-alert-warning">
+        <p>Statistiken nicht verfügbar: {data.statsError}</p>
+        <p class="text-sm mt-2">
+          Prüfe: Data Plane API läuft (z. B. im HAProxy-Container), <code class="gh-code">DATAPLANE_API_URL</code> in .env zeigt auf die DPA (z. B. http://localhost:5555).
+        </p>
+      </div>
     {:else if statsRows.length === 0}
-      <p class="text-[var(--gh-fg-muted)] text-sm">
-        Keine Statistik-Einträge (DPA /stats/native lieferte leeres oder anderes
-        Format).
+      <p class="config-section-intro" style="margin-bottom: 0;">
+        Keine Statistik-Einträge (DPA /stats/native lieferte leeres oder anderes Format).
       </p>
       {#if data.rawStats != null}
         <button
@@ -172,9 +143,7 @@
           class="mt-2 text-sm text-[var(--gh-fg-muted)] hover:text-[var(--gh-fg)] underline"
           on:click={() => (showStatsDebug = !showStatsDebug)}
         >
-          {showStatsDebug
-            ? "Roh-Antwort ausblenden"
-            : "Roh-Antwort der DPA anzeigen"}
+          {showStatsDebug ? "Roh-Antwort ausblenden" : "Roh-Antwort der DPA anzeigen"}
         </button>
         {#if showStatsDebug}
           <pre
@@ -186,43 +155,23 @@
         {/if}
       {/if}
     {:else}
-      <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
-      >
+      <div class="gh-tile-grid">
         {#each statsRows as row}
           {@const type = getType(row)}
           {@const status = getVal(row, "status")}
-          <article
-            class="rounded-xl border border-[var(--gh-border)] bg-[var(--gh-canvas-subtle)] shadow-sm hover:shadow-md transition-shadow p-4"
-          >
-            <div class="flex items-center justify-between gap-2 mb-3">
-              <span
-                class="text-xs font-medium px-2 py-0.5 rounded-full {type ===
-                'frontend'
-                  ? 'bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200'
-                  : type === 'backend'
-                    ? 'bg-violet-100 dark:bg-violet-900/60 text-violet-800 dark:text-violet-200'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'}"
-              >
-                {type}
-              </span>
+          <article class="gh-tile-static">
+            <div class="flex items-center justify-between gap-2">
+              <span class="gh-badge">{type}</span>
               {#if status && status !== "–"}
                 <span
-                  class="text-xs font-medium {status === 'OPEN' ||
-                  status === 'UP'
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : status === 'DOWN' || status === 'MAINT'
-                      ? 'text-red-600 dark:text-red-400'
-                      : 'text-[var(--gh-fg-muted)]'}"
+                  class="text-xs font-medium"
+                  style={status === 'OPEN' || status === 'UP' ? 'color: var(--gh-success);' : status === 'DOWN' || status === 'MAINT' ? 'color: var(--gh-danger);' : 'color: var(--gh-fg-muted);'}
                 >
                   {status}
                 </span>
               {/if}
             </div>
-            <h3
-              class="font-semibold text-[var(--gh-fg)] truncate mb-3"
-              title={getDisplayName(row)}
-            >
+            <h3 class="gh-tile-title mb-2" title={getDisplayName(row)}>
               {getDisplayName(row)}
             </h3>
             <dl
