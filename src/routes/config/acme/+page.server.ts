@@ -1,9 +1,10 @@
 import type { PageServerLoad } from './$types';
 import { getAcmeProviders } from '$lib/server/dataplane';
+import { toArray } from '$lib/server/dpa-utils';
 
 function toList(raw: unknown): { name: string; directory?: string }[] {
-	const arr = Array.isArray(raw) ? raw : [];
-	return arr
+	const arrayValues = toArray(raw);
+	return arrayValues
 		.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null && 'name' in x)
 		.map((x) => ({
 			name: String(x.name),

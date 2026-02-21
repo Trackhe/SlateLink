@@ -1,15 +1,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getCrtLoads, createCrtLoad } from '$lib/server/dataplane';
-
-function toList(raw: unknown): unknown[] {
-	return Array.isArray(raw) ? raw : [];
-}
+import { toArray } from '$lib/server/dpa-utils';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
 		const raw = await getCrtLoads(params.name);
-		return json(toList(raw));
+		return json(toArray(raw));
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);
 		return json({ error: message }, { status: 502 });

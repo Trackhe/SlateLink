@@ -5,10 +5,7 @@ import {
 	getServers,
 	frontendNamesUsingBackend
 } from '$lib/server/dataplane';
-
-function toList(raw: unknown): unknown[] {
-	return Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? [];
-}
+import { toDpaList } from '$lib/server/dpa-utils';
 
 export const load: PageServerLoad = async ({ params }) => {
 	try {
@@ -20,7 +17,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		const frontendsUsingThis = frontendNamesUsingBackend(frontendsRaw, params.name);
 		return {
 			backend,
-			servers: toList(serversRaw),
+			servers: toDpaList(serversRaw),
 			frontendsUsingThis,
 			canDelete: frontendsUsingThis.length === 0,
 			error: null

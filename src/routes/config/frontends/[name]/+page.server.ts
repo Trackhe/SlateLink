@@ -1,9 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { getFrontend, getBinds, getBackends } from '$lib/server/dataplane';
-
-function toList(raw: unknown): unknown[] {
-	return Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? [];
-}
+import { toDpaList } from '$lib/server/dpa-utils';
 
 function toNamedList(raw: unknown): { name: string }[] {
 	return toList(raw)
@@ -21,7 +18,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		]);
 		return {
 			frontend,
-			binds: toList(bindsRaw),
+			binds: toDpaList(bindsRaw),
 			backends: toNamedList(backendsRaw),
 			error: null
 		};

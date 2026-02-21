@@ -3,15 +3,12 @@ import type { RequestHandler } from './$types';
 import { getCrtStores, createCrtStore } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
 import { DEFAULT_CRT_STORE_NAME } from '$lib/server/default-crt-store';
-
-function toList(raw: unknown): unknown[] {
-	return Array.isArray(raw) ? raw : [];
-}
+import { toArray } from '$lib/server/dpa-utils';
 
 export const GET: RequestHandler = async () => {
 	try {
 		const raw = await getCrtStores();
-		return json(toList(raw));
+		return json(toArray(raw));
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);
 		return json({ error: message }, { status: 502 });

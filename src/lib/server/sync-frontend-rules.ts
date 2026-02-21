@@ -14,13 +14,10 @@ import {
 } from '$lib/server/dataplane';
 import { getAllFrontendRules } from '$lib/server/db';
 import { writeDomainMappingFile } from '$lib/server/domain-mapping';
-
-function toList(raw: unknown): unknown[] {
-	return Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? [];
-}
+import { toDpaList } from '$lib/server/dpa-utils';
 
 function frontendNames(raw: unknown): string[] {
-	const list = toList(raw);
+	const list = toDpaList(raw);
 	return list
 		.filter((x): x is { name?: string } => typeof x === 'object' && x !== null && 'name' in x)
 		.map((x) => x.name)
@@ -85,9 +82,13 @@ export async function syncOneFrontendRules(
 		await replaceFrontendAcls(frontendName, acls, { transaction_id: transactionId });
 		await replaceBackendSwitchingRules(frontendName, switchingRules, { transaction_id: transactionId });
 		await commitTransaction(transactionId);
-	} catch (e) {
+	} catch (error) {
 		// Transaktion verwerfen (DPA löscht in_progress-Transaktionen)
-		throw e;
+		const message = error instanceof Error ? error.message : String(error);
+		console.error(
+			`syncOneFrontendRules failed for frontend "${frontendName}" (transaction ${transactionId}): ${message}`
+		);
+		throw error;
 	}
 
 	// 3. HTTP→HTTPS-Redirect: pro Regel mit redirect_http_to_https eine http-request redirect Regel

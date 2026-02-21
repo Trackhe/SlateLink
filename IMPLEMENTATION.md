@@ -41,7 +41,7 @@
 ---
 
 | Hooks | `src/hooks.server.ts` | Startet Stats-Snapshot-Timer beim ersten Request. |
-| Tests | `src/lib/server/**/*.test.ts` | Vitest: db, audit, stats, dataplane (32 Tests). `npm run test` / `bun run test`. |
+| Tests | `src/lib/server/**/*.test.ts`, `src/lib/shared/**/*.test.ts` | Vitest: db, audit, stats, dataplane, dpa-utils, bind-validation, rules-validation, sync-frontend-rules, domain-mapping (51 Tests). `npm run test` / `bun run test`. |
 
 ---
 
@@ -76,8 +76,16 @@
 | `src/lib/server/audit.test.ts`     | logAction (id, optionale Felder); getAuditLog (Reihenfolge, Filter action, limit). Nach Test: closeDatabase().                                                                                                                                 |
 | `src/lib/server/stats.test.ts`     | getStatsHistory (leer, mit Daten, limit); deleteSnapshotsOlderThanDays.                                                                                                                                                                        |
 | `src/lib/server/dataplane.test.ts` | getInfo, getConfigurationVersion, getFrontends, getFrontend, getBackends, getBackend; frontendNamesUsingBackend; usedConfigNames; bindEndpointKey; getAllUsedBindEndpoints; deleteBind, deleteServer (Pfad + method). globalThis.fetch mocken. |
+| `src/lib/server/dpa-utils.test.ts` | `toArray` und `toDpaList`: Array, `{ data: [] }`, null/undefined/ungueltige Payloads. |
+| `src/lib/shared/bind-validation.test.ts` | `isValidBindAddress` und `getSafeBindName`: gueltige/ungueltige Bind-Adressen, sichere Name-Fallbacks. |
+| `src/lib/server/rules-validation.test.ts` | `parseRuleId` und `normalizeDomains`: gueltige/ungueltige IDs, Domain-Normalisierung. |
+| `src/lib/server/sync-frontend-rules.test.ts` | Sync-Flow mit Mocks: ACL/Switching/Redirect-Aufbau und domain_mapping-Write-Aufruf. |
+| `src/lib/server/domain-mapping.test.ts` | `buildDomainMappingContent`: Inhalte aus Regeln + Default-Fallback ohne Regeln. |
+| `src/lib/server/db/index.test.ts` | Erweitert um `frontend_rules` CRUD und Fallback bei ungueltigem JSON in DB-Spalten. |
 
 **Regel:** Neue Module/Routen zeitnah testen; Test-Doku hier anpassen und mit committen.
+
+**Sinnvolle Tests & Strategie:** Siehe **docs/TODO.md** §6 (Was testen, Priorität, konkrete Test-Ideen für toDpaList, Validierung, frontend_rules, domain-mapping, sync). Defensives Verhalten (ungültige IDs, leere DPA-Response, kaputtes JSON) explizit abdecken.
 
 ---
 
@@ -110,10 +118,14 @@ Falls die Data Plane API das Feld `httpclient.ssl.verify` nicht unterstützt (PU
 
 ## 5. Code-Qualität (Plan)
 
-- Keine Abkürzungen (außer id, url, ip).
+- Keine Abkürzungen (außer id, url, ip). Konkret: Variablen ausschreiben – siehe **docs/TODO.md** §1.
+- **Redundanzen vermeiden (DRY):** Eine Quelle für Validierung (z. B. isValidBindAddress), eine für DPA-Listen-Normalisierung (toDpaList); siehe **docs/TODO.md** §3.
+- **Defensiv, aber ohne unnötige Checks:** An Grenzen (API-Input, DPA-Response, DB-JSON) validieren und absichern; intern keine doppelten Prüfungen für bereits validierte Werte – siehe **docs/TODO.md** §4.
+- **Fehlervermeidung:** Validierung an der Grenze, einheitliche Fehlerantworten, Transaktionen bei Sync, keine stillen Fallbacks für kritische Daten – **docs/TODO.md** §5.
 - Modular: Dataplane, Audit, Stats, DB getrennt; Frontend API-Client + Seiten.
-- DRY: gemeinsame Hilfsfunktionen zentral.
 - Defensiv: Eingaben validieren; DPA-/Fetch-Fehler loggen und propagieren.
+
+**Komponentendiagramme:** Bei relevanten Änderungen [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md) anpassen (System, Server-Module, API, UI, Datenfluss).
 
 ---
 

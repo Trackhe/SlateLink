@@ -1,27 +1,29 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getAllFrontendRules, createFrontendRule, type BindCertRef } from '$lib/server/db';
+import { getAllFrontendRules, createFrontendRule, getFrontendRuleById, type BindCertRef } from '$lib/server/db';
 import { syncAllFrontendRules } from '$lib/server/sync-frontend-rules';
 import { getCrtLoads, resolveCertToStore } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
+import { toDpaList } from '$lib/server/dpa-utils';
+import { normalizeDomains } from '$lib/server/rules-validation';
 
 function parseCertRef(
-	val: string | undefined,
+	certificateInput: string | undefined,
 	certRefBody: BindCertRef | undefined
 ): BindCertRef | null {
 	if (certRefBody && typeof certRefBody === 'object') {
 		if (certRefBody.type === 'store' && certRefBody.store && certRefBody.cert) return certRefBody;
 		if (certRefBody.type === 'path' && certRefBody.cert) return certRefBody;
 	}
-	const s = (val ?? '').trim();
-	if (!s) return null;
-	if (s.startsWith('store:')) {
-		const store = s.slice(6).trim();
+	const trimmedInput = (certificateInput ?? '').trim();
+	if (!trimmedInput) return null;
+	if (trimmedInput.startsWith('store:')) {
+		const store = trimmedInput.slice(6).trim();
 		// Cert-Dateiname aus Store: wir speichern nur store + Platzhalter oder ersten Load
 		return { type: 'store', store, cert: '' };
 	}
-	if (s.startsWith('cert:')) return { type: 'path', cert: s.slice(5).trim() };
-	return { type: 'path', cert: s };
+	if (trimmedInput.startsWith('cert:')) return { type: 'path', cert: trimmedInput.slice(5).trim() };
+	return { type: 'path', cert: trimmedInput };
 }
 
 export const GET: RequestHandler = async () => {
@@ -45,9 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				{ status: 400 }
 			);
 		}
-		const domains = Array.isArray(body.domains)
-			? (body.domains as string[]).map((d) => String(d).trim()).filter(Boolean)
-			: [];
+		const domains = normalizeDomains(body.domains);
 		const redirect_http_to_https = body.redirect_http_to_https === true;
 		let cert_ref: BindCertRef | null = parseCertRef(
 			body.ssl_certificate as string | undefined,
@@ -60,10 +60,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		if (cert_ref && cert_ref.type === 'store' && !cert_ref.cert) {
 			try {
 				const loadsRaw = await getCrtLoads(cert_ref.store);
-				const loads = Array.isArray(loadsRaw) ? loadsRaw : (loadsRaw as { data?: { certificate?: string }[] })?.data ?? [];
-				const first = loads.find((l: { certificate?: string }) => l?.certificate);
-				cert_ref = first?.certificate
-					? { type: 'store', store: cert_ref.store, cert: first.certificate }
+				const loads = toDpaList(loadsRaw) as { certificate?: string }[];
+				const firstLoad = loads.find((load) => load?.certificate);
+				cert_ref = firstLoad?.certificate
+					? { type: 'store', store: cert_ref.store, cert: firstLoad.certificate }
 					: null;
 			} catch {
 				cert_ref = null;
@@ -85,7 +85,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			details: `Regel ${id} für Frontend ${frontend_name}`
 		});
 		await syncAllFrontendRules();
-		const rule = (await import('$lib/server/db')).getFrontendRuleById(id);
+		const rule = getFrontendRuleById(id);
 		return json({ ok: true, rule });
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);

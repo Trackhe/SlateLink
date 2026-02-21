@@ -6,6 +6,7 @@
  * nicht aus der Stats-URL (8404) – HAPROXY_STATS_URL ist damit optional.
  */
 import { dpaBaseUrl, dpaAuthHeader } from '$lib/server/config';
+import { toDpaList } from '$lib/server/dpa-utils';
 
 const dpaFetch = async (path: string, query?: Record<string, string>) => {
 	const url = new URL(path, dpaBaseUrl);
@@ -150,7 +151,7 @@ export async function getBackend(name: string): Promise<unknown> {
 }
 
 function toNameList(raw: unknown): string[] {
-	const list = Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? [];
+	const list = toDpaList(raw);
 	return list
 		.filter((x): x is { name?: string } => typeof x === 'object' && x !== null && 'name' in x)
 		.map((x) => (typeof x.name === 'string' ? x.name : ''))
@@ -170,9 +171,7 @@ export function frontendNamesUsingBackend(
 	frontendsRaw: unknown,
 	backendName: string
 ): string[] {
-	const list = Array.isArray(frontendsRaw)
-		? frontendsRaw
-		: (frontendsRaw as { data?: unknown[] })?.data ?? [];
+	const list = toDpaList(frontendsRaw);
 	return list
 		.filter(
 			(f): f is { name?: string; default_backend?: string } =>
@@ -251,7 +250,7 @@ function toBindKey(address: string | undefined, port: number): string {
 }
 
 function bindKeysFromRaw(raw: unknown): string[] {
-	const list = Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? [];
+	const list = toDpaList(raw);
 	return list
 		.filter((x): x is { address?: string; port?: number } => typeof x === 'object' && x !== null)
 		.map((x) => toBindKey(x.address, Number(x.port)))
@@ -275,16 +274,14 @@ export async function getAllUsedBindEndpoints(): Promise<Set<string>> {
 /** Alle ssl_certificate-Werte aus allen Frontend-Binds. Ein Zertifikat gilt als „in Frontend verwendet“, wenn es in dieser Menge vorkommt. */
 export async function getSslCertificatesUsedInBinds(): Promise<Set<string>> {
 	const frontendsRaw = await getFrontends();
-	const list = Array.isArray(frontendsRaw)
-		? (frontendsRaw as { name?: string }[])
-		: (frontendsRaw as { data?: { name?: string }[] })?.data ?? [];
+	const list = toDpaList(frontendsRaw) as { name?: string }[];
 	const names = list
 		.filter((x): x is { name: string } => typeof x === 'object' && x !== null && typeof (x as { name?: string }).name === 'string')
 		.map((x) => x.name);
 	const used = new Set<string>();
 	for (const feName of names) {
 		const bindsRaw = await getBinds(feName);
-		const binds = Array.isArray(bindsRaw) ? bindsRaw : (bindsRaw as { data?: unknown[] })?.data ?? [];
+		const binds = toDpaList(bindsRaw);
 		for (const b of binds) {
 			const cert = typeof (b as { ssl_certificate?: string }).ssl_certificate === 'string'
 				? (b as { ssl_certificate: string }).ssl_certificate.trim()

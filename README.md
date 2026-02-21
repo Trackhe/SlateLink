@@ -136,7 +136,10 @@ Wenn die App **http://localhost:5555** nicht erreicht:
 
 ## Dokumentation
 
-- **Implementierungsstand:** [IMPLEMENTATION.md](IMPLEMENTATION.md) – listet alle implementierten Funktionen und nächste Schritte.
+- **Dokumentations-Index:** [docs/README.md](docs/README.md) – Übersicht aller Docs.
+- **Implementierungsstand:** [IMPLEMENTATION.md](IMPLEMENTATION.md) – implementierte Funktionen und nächste Schritte.
+- **Architektur & Komponentendiagramme:** [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md) – Server-Module, API, Datenfluss (Mermaid).
+- **Todo & Codequalität:** [docs/TODO.md](docs/TODO.md) – Fehlerquellen, Variablen ausschreiben, offene Punkte.
 
 ## Meilensteine (Git-Tags)
 

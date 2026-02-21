@@ -3,23 +3,16 @@ import type { RequestHandler } from './$types';
 import { getFrontend, getBinds, getBind, getBackends, getDefaults, updateDefaults, updateFrontend, deleteFrontend, syncRedirectHttpToHttps } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
 import { getFrontendOptions, setFrontendOptions } from '$lib/server/db';
-
-function toList(raw: unknown): unknown[] {
-	return Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? [];
-}
+import { toDpaList } from '$lib/server/dpa-utils';
 function toNamedList(raw: unknown): { name: string }[] {
-	return toList(raw)
+	return toDpaList(raw)
 		.filter((x): x is { name?: string } => typeof x === 'object' && x !== null && 'name' in x)
 		.filter((x) => typeof x.name === 'string')
 		.map((x) => ({ name: x.name! }));
 }
 
 function optionsFromDefaults(defaultsRaw: unknown): { forwardClientIp: boolean; forwardProto: boolean; websocketSupport: boolean } {
-	const list = Array.isArray(defaultsRaw)
-		? defaultsRaw
-		: (defaultsRaw as { data?: unknown[] })?.data
-			? (defaultsRaw as { data: unknown[] }).data
-			: [];
+	const list = toDpaList(defaultsRaw);
 	const first = list[0] as Record<string, unknown> | undefined;
 	if (!first) return { forwardClientIp: false, forwardProto: false, websocketSupport: false, redirectHttpToHttps: false };
 	const forwardfor = first.forwardfor as { enabled?: string } | undefined;
@@ -53,7 +46,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		const fromDefaults = optionsFromDefaults(defaultsRaw);
 		const stored = getFrontendOptions(params.name);
 		const options = mergeOptions(fromDefaults, stored);
-		const bindList = toList(bindsRaw) as { name?: string }[];
+		const bindList = toDpaList(bindsRaw) as { name?: string }[];
 		const bindsWithDetails = await Promise.all(
 			bindList.map(async (b) => {
 				const name = typeof b?.name === 'string' ? b.name : null;
@@ -113,11 +106,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		await syncRedirectHttpToHttps(params.name, options?.redirectHttpToHttps ?? false);
 		if (options && (options.forwardClientIp || options.websocketSupport)) {
 			const defaultsRaw = await getDefaults();
-			const defaultsList = Array.isArray(defaultsRaw)
-				? defaultsRaw
-				: (defaultsRaw as { data?: unknown[] })?.data
-					? (defaultsRaw as { data: unknown[] }).data
-					: [];
+			const defaultsList = toDpaList(defaultsRaw);
 			const first = defaultsList[0] as Record<string, unknown> | undefined;
 			if (first && typeof first.name === 'string') {
 				const payload: Record<string, unknown> = { ...first };

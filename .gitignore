@@ -35,3 +35,4 @@ certbot/*.pem
 
 # Data directories
 data/
+haproxy/

@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getDatabase, closeDatabase } from "./index";
+import {
+  getAllFrontendRules,
+  getDatabase,
+  closeDatabase,
+  createFrontendRule,
+  getFrontendRuleById,
+  updateFrontendRule,
+  deleteFrontendRule,
+} from "./index";
 import type { AuditLogRow, StatsSnapshotRow } from "./index";
 
 vi.mock("$env/dynamic/private", () => ({
@@ -45,5 +53,47 @@ describe("db", () => {
       .prepare("SELECT * FROM stats_snapshots LIMIT 1")
       .get() as StatsSnapshotRow;
     expect(row.payload).toBe('{"foo":1}');
+  });
+
+  it("creates, updates and deletes frontend rules", () => {
+    const id = createFrontendRule({
+      frontend_name: "fe_http",
+      domains: ["example.com"],
+      backend_name: "be_http",
+      cert_ref: { type: "path", cert: "example.pem" },
+      redirect_http_to_https: true,
+      sort_order: 0,
+    });
+    const created = getFrontendRuleById(id);
+    expect(created?.frontend_name).toBe("fe_http");
+    expect(created?.domains).toEqual(["example.com"]);
+    expect(created?.redirect_http_to_https).toBe(true);
+
+    updateFrontendRule(id, {
+      domains: ["www.example.com"],
+      backend_name: "be_www",
+      cert_ref: null,
+      redirect_http_to_https: false,
+    });
+    const updated = getFrontendRuleById(id);
+    expect(updated?.backend_name).toBe("be_www");
+    expect(updated?.domains).toEqual(["www.example.com"]);
+    expect(updated?.cert_ref).toBeNull();
+    expect(updated?.redirect_http_to_https).toBe(false);
+
+    deleteFrontendRule(id);
+    expect(getFrontendRuleById(id)).toBeNull();
+  });
+
+  it("falls back for invalid frontend_rules json columns", () => {
+    const db = getDatabase();
+    db.prepare(
+      "INSERT INTO frontend_rules (frontend_name, domains_json, backend_name, cert_ref_json, redirect_http_to_https, sort_order) VALUES (?, ?, ?, ?, ?, ?)"
+    ).run("fe_invalid", "{not-json}", "be_invalid", "{not-json}", 1, 1);
+
+    const rules = getAllFrontendRules();
+    const invalidRule = rules.find((rule) => rule.frontend_name === "fe_invalid");
+    expect(invalidRule?.domains).toEqual([]);
+    expect(invalidRule?.cert_ref).toBeNull();
   });
 });

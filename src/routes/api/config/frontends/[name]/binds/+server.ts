@@ -6,22 +6,7 @@ import type { RequestHandler } from './$types';
 import { createBind, getAllUsedBindEndpoints, bindEndpointKey } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
 import { DOMAIN_MAPPING_CRT_LIST_PATH, writeDomainMappingFile } from '$lib/server/domain-mapping';
-
-function isValidBindAddress(v: string): boolean {
-	const s = v.trim() || '*';
-	if (s === '*' || s === '0.0.0.0' || s === '::') return true;
-	const ipv4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-	const ipv6 = /^[\da-fA-F:]+$/;
-	return ipv4.test(s) || (s.startsWith('[') && s.endsWith(']') && ipv6.test(s.slice(1, -1)));
-}
-
-function safeBindName(name: string, port: number): string {
-	const s = (name ?? '').trim();
-	if (!s) return `bind_${port}`;
-	if (/\*|\./.test(s)) return `bind_${port}`;
-	if (isValidBindAddress(s)) return `bind_${port}`;
-	return s.length <= 32 && /^[a-zA-Z0-9_-]+$/.test(s) ? s : `bind_${port}`;
-}
+import { getSafeBindName, isValidBindAddress } from '$lib/shared/bind-validation';
 
 export const POST: RequestHandler = async ({ params, request }) => {
 	try {
@@ -45,7 +30,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		}
 		const address = rawAddress;
 		const rawName = typeof body.name === 'string' ? body.name.trim() : '';
-		const name = safeBindName(rawName || `bind_${port}`, port);
+		const name = getSafeBindName(rawName || `bind_${port}`, port);
 		const used = await getAllUsedBindEndpoints();
 		if (used.has(bindEndpointKey(address, port))) {
 			return json(

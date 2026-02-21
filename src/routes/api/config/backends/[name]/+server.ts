@@ -9,10 +9,7 @@ import {
 	deleteBackend
 } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
-
-function toList(raw: unknown): unknown[] {
-	return Array.isArray(raw) ? raw : (raw as { data?: unknown[] })?.data ?? [];
-}
+import { toDpaList } from '$lib/server/dpa-utils';
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
@@ -24,7 +21,7 @@ export const GET: RequestHandler = async ({ params }) => {
 		const frontendsUsingThis = frontendNamesUsingBackend(frontendsRaw, params.name);
 		return json({
 			backend,
-			servers: toList(serversRaw),
+			servers: toDpaList(serversRaw),
 			frontendsUsingThis,
 			canDelete: frontendsUsingThis.length === 0,
 			error: null

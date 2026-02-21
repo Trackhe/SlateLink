@@ -9,32 +9,34 @@ import {
 import { syncAllFrontendRules } from '$lib/server/sync-frontend-rules';
 import { getCrtLoads, resolveCertToStore } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
+import { toDpaList } from '$lib/server/dpa-utils';
+import { normalizeDomains, parseRuleId } from '$lib/server/rules-validation';
 
 function parseCertRef(
-	val: string | undefined,
+	certificateInput: string | undefined,
 	certRefBody: BindCertRef | undefined
 ): BindCertRef | null {
 	if (certRefBody && typeof certRefBody === 'object') {
 		if (certRefBody.type === 'store' && certRefBody.store && certRefBody.cert) return certRefBody;
 		if (certRefBody.type === 'path' && certRefBody.cert) return certRefBody;
 	}
-	const s = (val ?? '').trim();
-	if (!s) return null;
-	if (s.startsWith('store:')) {
-		const store = s.slice(6).trim();
+	const trimmedInput = (certificateInput ?? '').trim();
+	if (!trimmedInput) return null;
+	if (trimmedInput.startsWith('store:')) {
+		const store = trimmedInput.slice(6).trim();
 		return { type: 'store', store, cert: '' };
 	}
-	if (s.startsWith('cert:')) return { type: 'path', cert: s.slice(5).trim() };
-	return { type: 'path', cert: s };
+	if (trimmedInput.startsWith('cert:')) return { type: 'path', cert: trimmedInput.slice(5).trim() };
+	return { type: 'path', cert: trimmedInput };
 }
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
-		const id = parseInt(params.id, 10);
-		if (!Number.isInteger(id) || id < 1) {
+		const ruleId = parseRuleId(params.id);
+		if (ruleId === null) {
 			return json({ error: 'Ungültige Regel-ID' }, { status: 400 });
 		}
-		const rule = getFrontendRuleById(id);
+		const rule = getFrontendRuleById(ruleId);
 		if (!rule) return json({ error: 'Regel nicht gefunden' }, { status: 404 });
 		return json({ rule });
 	} catch (e) {
@@ -45,16 +47,16 @@ export const GET: RequestHandler = async ({ params }) => {
 
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
-		const id = parseInt(params.id, 10);
-		if (!Number.isInteger(id) || id < 1) {
+		const ruleId = parseRuleId(params.id);
+		if (ruleId === null) {
 			return json({ error: 'Ungültige Regel-ID' }, { status: 400 });
 		}
-		const existing = getFrontendRuleById(id);
+		const existing = getFrontendRuleById(ruleId);
 		if (!existing) return json({ error: 'Regel nicht gefunden' }, { status: 404 });
 
 		const body = (await request.json()) as Record<string, unknown>;
 		const domains = Array.isArray(body.domains)
-			? (body.domains as string[]).map((d) => String(d).trim()).filter(Boolean)
+			? normalizeDomains(body.domains)
 			: existing.domains;
 		const backend_name = typeof body.backend_name === 'string' ? body.backend_name.trim() : existing.backend_name;
 		const redirect_http_to_https = body.redirect_http_to_https === true;
@@ -70,25 +72,25 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		if (cert_ref && cert_ref.type === 'store' && !cert_ref.cert) {
 			try {
 				const loadsRaw = await getCrtLoads(cert_ref.store);
-				const loads = Array.isArray(loadsRaw) ? loadsRaw : (loadsRaw as { data?: { certificate?: string }[] })?.data ?? [];
-				const first = loads.find((l: { certificate?: string }) => l?.certificate);
-				cert_ref = first?.certificate
-					? { type: 'store', store: cert_ref.store, cert: first.certificate }
+				const loads = toDpaList(loadsRaw) as { certificate?: string }[];
+				const firstLoad = loads.find((load) => load?.certificate);
+				cert_ref = firstLoad?.certificate
+					? { type: 'store', store: cert_ref.store, cert: firstLoad.certificate }
 					: null;
 			} catch {
 				cert_ref = null;
 			}
 		}
 
-		updateFrontendRule(id, { domains, backend_name, cert_ref, redirect_http_to_https });
+		updateFrontendRule(ruleId, { domains, backend_name, cert_ref, redirect_http_to_https });
 		logAction({
 			action: 'rule_updated',
 			resource_type: 'frontend',
 			resource_id: existing.frontend_name,
-			details: `Regel ${id} aktualisiert`
+			details: `Regel ${ruleId} aktualisiert`
 		});
 		await syncAllFrontendRules();
-		const rule = getFrontendRuleById(id);
+		const rule = getFrontendRuleById(ruleId);
 		return json({ ok: true, rule });
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);
@@ -98,18 +100,18 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 
 export const DELETE: RequestHandler = async ({ params }) => {
 	try {
-		const id = parseInt(params.id, 10);
-		if (!Number.isInteger(id) || id < 1) {
+		const ruleId = parseRuleId(params.id);
+		if (ruleId === null) {
 			return json({ error: 'Ungültige Regel-ID' }, { status: 400 });
 		}
-		const existing = getFrontendRuleById(id);
+		const existing = getFrontendRuleById(ruleId);
 		if (!existing) return json({ error: 'Regel nicht gefunden' }, { status: 404 });
-		deleteFrontendRule(id);
+		deleteFrontendRule(ruleId);
 		logAction({
 			action: 'rule_deleted',
 			resource_type: 'frontend',
 			resource_id: existing.frontend_name,
-			details: `Regel ${id} gelöscht`
+			details: `Regel ${ruleId} gelöscht`
 		});
 		await syncAllFrontendRules();
 		return new Response(null, { status: 204 });

@@ -17,6 +17,7 @@ import {
 } from '$lib/server/db';
 import { DEFAULT_CRT_STORE_NAME, DEFAULT_CRT_FILENAME } from '$lib/server/default-crt-store';
 import { resolveCertToStore, getCrtLoads } from '$lib/server/dataplane';
+import { toDpaList } from '$lib/server/dpa-utils';
 
 /** Pfad, wie ihn HAProxy in der Bind-Config sieht (crt_list). Muss zu resources.ssl_certs_dir passen. */
 export const DOMAIN_MAPPING_CRT_LIST_PATH = '/usr/local/etc/haproxy/ssl/domain_mapping.txt';
@@ -87,9 +88,9 @@ export async function buildDomainMappingContent(
 		if (ref.type === 'store' && !ref.cert) {
 			try {
 				const loadsRaw = await getCrtLoads(ref.store);
-				const loads = Array.isArray(loadsRaw) ? (loadsRaw as { certificate?: string }[]) : ((loadsRaw as { data?: { certificate?: string }[] })?.data ?? []);
-				const first = loads.find((l: { certificate?: string }) => l?.certificate);
-				if (first?.certificate) ref = { type: 'store', store: ref.store, cert: first.certificate };
+				const loads = toDpaList(loadsRaw) as { certificate?: string }[];
+				const firstLoad = loads.find((load) => load?.certificate);
+				if (firstLoad?.certificate) ref = { type: 'store', store: ref.store, cert: firstLoad.certificate };
 			} catch {
 				// Store nicht lesbar, überspringen
 				continue;

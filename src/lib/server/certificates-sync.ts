@@ -13,9 +13,10 @@ import { dumpSslCertViaSocket } from '$lib/server/haproxy-socket';
 import { dumpSslCertViaDockerExec } from '$lib/server/haproxy-docker-exec';
 import { readPemFromCertDirWithFallbacks } from '$lib/server/haproxy-certs-dir';
 import { certSyncIntervalMs } from '$lib/server/config';
+import { toArray } from '$lib/server/dpa-utils';
 
 function toStorageList(raw: unknown): Set<string> {
-	const arr = Array.isArray(raw) ? raw : [];
+	const arr = toArray(raw);
 	const names = new Set<string>();
 	for (const x of arr) {
 		if (typeof x !== 'object' || x === null) continue;
@@ -27,7 +28,7 @@ function toStorageList(raw: unknown): Set<string> {
 }
 
 function toRuntimeCertList(raw: unknown): { storage_name?: string; file?: string; subject?: string; chain_issuer?: string; issuers?: string; not_after?: string }[] {
-	const arr = Array.isArray(raw) ? raw : [];
+	const arr = toArray(raw);
 	return arr
 		.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null)
 		.map((x) => ({

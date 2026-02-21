@@ -11,22 +11,23 @@ import {
 } from '$lib/server/dataplane';
 import { getCertSpecsFromDomainMappingFile } from '$lib/server/domain-mapping';
 import { ensureDefaultCrtStore } from '$lib/server/default-crt-store';
+import { toArray } from '$lib/server/dpa-utils';
 
 function toList(raw: unknown): { name: string }[] {
-	const arr = Array.isArray(raw) ? raw : [];
-	return arr
+	const arrayValues = toArray(raw);
+	return arrayValues
 		.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null && 'name' in x)
 		.map((x) => ({ name: String(x.name) }));
 }
 
 function loadList(raw: unknown): Record<string, unknown>[] {
-	const arr = Array.isArray(raw) ? raw : [];
-	return arr.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null);
+	const arrayValues = toArray(raw);
+	return arrayValues.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null);
 }
 
 function toStorageList(raw: unknown): { storage_name?: string; file?: string }[] {
-	const arr = Array.isArray(raw) ? raw : [];
-	return arr
+	const arrayValues = toArray(raw);
+	return arrayValues
 		.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null)
 		.map((x) => ({
 			storage_name: typeof x.storage_name === 'string' ? x.storage_name : undefined,
@@ -45,8 +46,8 @@ type AcmeCert = {
 };
 
 function toAcmeList(raw: unknown): AcmeCert[] {
-	const arr = Array.isArray(raw) ? raw : [];
-	return arr.filter(
+	const arrayValues = toArray(raw);
+	return arrayValues.filter(
 		(x): x is AcmeCert =>
 			typeof x === 'object' && x !== null && typeof (x as AcmeCert).certificate === 'string'
 	);
@@ -64,8 +65,8 @@ export type RuntimeCert = {
 };
 
 function toRuntimeCertList(raw: unknown): RuntimeCert[] {
-	const arr = Array.isArray(raw) ? raw : [];
-	return arr
+	const arrayValues = toArray(raw);
+	return arrayValues
 		.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null)
 		.map((x) => ({
 			file: typeof x.file === 'string' ? x.file : undefined,
@@ -94,11 +95,11 @@ export const load: PageServerLoad = async () => {
 			]);
 		const certsUsedInBindsMerged = new Set([...certsUsedInBindsSet, ...certsFromMapping]);
 		const storeList = toList(raw);
-		const acmeList = (Array.isArray(acmeRaw) ? acmeRaw : [])
+		const acmeList = toArray(acmeRaw)
 			.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null && 'name' in x)
 			.map((x) => String(x.name))
 			.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-		const acmeStatus = (Array.isArray(acmeStatusRaw) ? acmeStatusRaw : []) as {
+		const acmeStatus = toArray(acmeStatusRaw) as {
 			certificate?: string;
 			state?: string;
 			expiries_in?: string;
