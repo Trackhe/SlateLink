@@ -93,7 +93,7 @@ Module als „Klassen“ mit ausgewählten Exporten; Pfeil **A → B** = A nutzt
 
 ```mermaid
 classDiagram
-  class config <<module>> {
+  class config {
     +dpaBaseUrl
     +dpaAuthHeader
     +databasePath
@@ -102,7 +102,7 @@ classDiagram
     +haproxySslCertsDir
     +haproxyContainerName
   }
-  class db <<module>> {
+  class db {
     +getDatabase()
     +getAllFrontendRules()
     +getFrontendRules(name)
@@ -114,14 +114,14 @@ classDiagram
     +getConfig()
     +setConfig()
   }
-  class schema <<module>> {
+  class schema {
     +schemaStatements
   }
-  class dpa_utils <<module>> {
+  class dpa_utils {
     +toArray(raw)
     +toDpaList(raw)
   }
-  class dataplane <<module>> {
+  class dataplane {
     +getInfo()
     +getFrontends()
     +getBackends()
@@ -137,50 +137,50 @@ classDiagram
     +createStorageSslCertificateFromPem()
     +getStats()
   }
-  class haproxy_socket <<module>> {
+  class haproxy_socket {
     +dumpSslCertViaSocket(name)
   }
-  class haproxy_exec <<module>> {
+  class haproxy_exec {
     +dumpSslCertViaDockerExec(name)
   }
-  class haproxy_certs <<module>> {
+  class haproxy_certs {
     +readPemFromCertDir(name)
     +readPemFromCertDirWithFallbacks(name)
     +deleteCertFileFromSslDir(cert)
   }
-  class parse_cert <<module>> {
+  class parse_cert {
     +parseLeafCertInfo(pem)
     +parseAllCertsFromPem(pem)
   }
-  class cert_resolve <<module>> {
+  class cert_resolve {
     +findCertPathForDomainInStore()
     +resolveCertForDomainInStore()
     +domainMatchesSan()
   }
-  class cert_sync <<module>> {
+  class cert_sync {
     +syncRuntimeCertsToStorage()
     +saveRuntimeCertToStorage(name)
     +startCertSyncScheduler()
   }
-  class default_crt <<module>> {
+  class default_crt {
     +DEFAULT_CRT_STORE_NAME
     +ensureDefaultCrtStore()
   }
-  class domain_mapping <<module>> {
+  class domain_mapping {
     +DOMAIN_MAPPING_CRT_LIST_PATH
     +buildDomainMappingContent()
     +writeDomainMappingFile()
     +getCertSpecsFromDomainMappingFile()
   }
-  class sync_rules <<module>> {
+  class sync_rules {
     +syncAllFrontendRules()
     +syncOneFrontendRules(fe, rules)
   }
-  class audit <<module>> {
+  class audit {
     +logAction(entry)
     +getAuditLog(options)
   }
-  class stats <<module>> {
+  class stats {
     +writeStatsSnapshot()
     +getStatsHistory()
     +startStatsSnapshotTimer()
