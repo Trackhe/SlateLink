@@ -1,5 +1,0 @@
-# domain_mapping.txt – von SlateLink verwaltet
-# Pro Zeile: Zertifikat (@store/datei.pem oder Pfad), optional gefolgt von Domain(s) für SNI
-
-# Das test.pem Zertifikat aus dem Store nur für "test" nutzen
-@customdocker/test.pem test
