@@ -20,7 +20,7 @@ flowchart LR
     DPA[Data Plane API :5555]
     HAProxy[HAProxy]
   end
-  User -->|"/" + "/api/*"| app
+  User -->|Seiten und /api/*| app
   Server -->|REST + Basic Auth| DPA
   DPA -->|stats socket| HAProxy
 ```
@@ -134,11 +134,30 @@ Wenn die App **http://localhost:5555** nicht erreicht:
 | `DELETE /api/config/frontends/[name]/binds/[bind_name]`    | Bind entfernen                                              |
 | `DELETE /api/config/frontends/[name]`                      | Frontend löschen                                            |
 
+## Tests
+
+Tests laufen mit **Vitest** (`bun run test` bzw. `npm run test`). Getestet wird:
+
+| Modul | Inhalt |
+|-------|--------|
+| **db** (`src/lib/server/db/index.test.ts`) | Schema-Erstellung, Audit-Log und Stats-Snapshots einfügen/lesen, Frontend-Rules CRUD, Fallback bei ungültigem JSON |
+| **domain-mapping** | Mapping-Text aus Frontend-Rules bauen, Default-Zertifikat wenn keine Regel ein cert_ref hat |
+| **sync-frontend-rules** | `syncOneFrontendRules`: ACLs, switching rules, Redirects erzeugen; `syncAllFrontendRules`: alle Frontends, Mapping schreiben |
+| **rules-validation** | `parseRuleId` (gültige/ungültige IDs), `normalizeDomains` (Trimmen, leere Werte, Nicht-Arrays) |
+| **bind-validation** (`src/lib/shared`) | Gültige Wildcard-/IP-Bind-Adressen, Ablehnung ungültiger Adressen, Fallback-Bind-Namen, gültige Custom-Namen |
+| **dpa-utils** | `toArray` / `toDpaList`: Arrays, Wrapper-Payloads, ungültige Payloads |
+| **dataplane** | `getInfo`, `getConfigurationVersion`, `getFrontends`/`getFrontend`, `getBackends`/`getBackend`, `frontendNamesUsingBackend`, `usedConfigNames`, `bindEndpointKey`, `getAllUsedBindEndpoints`, `deleteBind`, `deleteServer` (jeweils mit Mock-Fetch) |
+| **stats** | `getStatsHistory` (leer, mit Snapshots, Limit), `deleteSnapshotsOlderThanDays` |
+| **audit** | `logAction` (mit/ohne optionale Felder), `getAuditLog` (Sortierung, Filter nach action, limit) |
+
+Es gibt keine End-to-End- oder UI-Tests; die Tests decken Server-Logik, DB, Data-Plane-API-Helfer und Validierung ab.
+
 ## Dokumentation
 
 - **Dokumentations-Index:** [docs/README.md](docs/README.md) – Übersicht aller Docs.
 - **Implementierungsstand:** [IMPLEMENTATION.md](IMPLEMENTATION.md) – implementierte Funktionen und nächste Schritte.
 - **Architektur & Komponentendiagramme:** [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md) – Server-Module, API, Datenfluss (Mermaid).
+- **Module & Funktionen im Code:** [docs/KOMPONENTEN.md](docs/KOMPONENTEN.md) – Konkrete Code-Module (config, db, dataplane, sync, Zertifikate, Audit, Stats) und Zusammenarbeit.
 - **Todo & Codequalität:** [docs/TODO.md](docs/TODO.md) – Fehlerquellen, Variablen ausschreiben, offene Punkte.
 
 ## Meilensteine (Git-Tags)

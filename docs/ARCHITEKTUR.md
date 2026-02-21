@@ -22,7 +22,7 @@ flowchart TB
     DB[(SQLite<br/>app.db)]
     FS[Dateisystem<br/>haproxy/ssl, domain_mapping.txt]
   end
-  User -->|"/" + "/api/*"| app
+  User -->|Seiten und /api/*| app
   Server -->|REST + Basic Auth| DPA
   Server --> DB
   Server --> FS
@@ -34,7 +34,7 @@ flowchart TB
 ```mermaid
 flowchart LR
   subgraph config [Konfiguration]
-    config[config.ts]
+    config_ts[config.ts]
   end
   subgraph dpa [Data Plane API]
     dataplane[dataplane.ts]
@@ -60,11 +60,11 @@ flowchart LR
     audit[audit.ts]
     stats[stats.ts]
   end
-  config --> dataplane
-  config --> db_index
-  config --> haproxy_certs
-  config --> haproxy_exec
-  config --> haproxy_socket
+  config_ts --> dataplane
+  config_ts --> db_index
+  config_ts --> haproxy_certs
+  config_ts --> haproxy_exec
+  config_ts --> haproxy_socket
   schema --> db_index
   dataplane --> sync_rules
   db_index --> sync_rules

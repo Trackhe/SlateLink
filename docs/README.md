@@ -17,6 +17,7 @@
 | [ANBINDUNG-HAPROXY-SVELTEKIT.md](ANBINDUNG-HAPROXY-SVELTEKIT.md) | Server-only DPA-Anbindung, private Env, Ablauf Browser → SvelteKit → DPA |
 | [plan-acl-regeln.md](plan-acl-regeln.md) | Plan: ACL/Regeln, Binds vereinfachen, Domain→Backend/Zertifikat/Redirect, Sync-Ablauf |
 | [ARCHITEKTUR.md](ARCHITEKTUR.md) | Komponentendiagramme (Server, API, UI, Datenfluss) |
+| [KOMPONENTEN.md](KOMPONENTEN.md) | Module und Funktionen im Code (config, db, dataplane, sync, Zertifikate, Audit, Stats, API→Module) |
 | [TODO.md](TODO.md) | Offene Punkte, Fehlerquellen, Codequalität (Variablen ausschreiben) |
 
 ## Spezifikationen
