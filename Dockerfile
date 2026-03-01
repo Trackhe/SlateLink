@@ -37,6 +37,9 @@ RUN npm run build
 FROM node:20-alpine AS production
 WORKDIR /app
 
+# Docker CLI für „docker logs“ auf der Audit-Seite (optional, wenn Socket gemountet wird)
+RUN apk add --no-cache docker-cli
+
 # Nur Production-Dependencies
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
