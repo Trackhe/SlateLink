@@ -33,30 +33,63 @@ flowchart LR
 - **HAProxy:** immer per Docker (Docker und Docker Compose)
 - **App:** optional mit Docker oder lokal (Node.js 22+, **Bun** als Package Manager)
 
-## Zwei Betriebsarten
+## Netzwerk-Konfiguration (macvlan)
 
-### 1. Alles mit Docker
+Die Container nutzen **macvlan**, um eigene IPs im lokalen Netzwerk zu bekommen. **Vor dem ersten Start anpassen:**
+
+1. **Netzwerk-Interface** in `docker-compose.yml` anpassen:
+   ```yaml
+   networks.slatelink-network.driver_opts.parent: eth0  # dein Interface (ip a oder ifconfig)
+   ```
+
+2. **Subnet, Gateway und IP-Bereich** für dein Netzwerk:
+   ```yaml
+   subnet: 192.168.1.0/24        # dein Netzwerk-Subnet
+   gateway: 192.168.1.1          # dein Gateway/Router
+   ip_range: 192.168.1.128/25    # IP-Bereich für Container (z.B. 192.168.1.128-255)
+   ```
+
+3. **Optional: Statische IPs** für Container festlegen (in docker-compose.yml auskommentiert):
+   ```yaml
+   networks:
+     slatelink-network:
+       ipv4_address: 192.168.1.130  # feste IP für HAProxy
+   ```
+
+**Wichtig:** Bei macvlan können Container vom Docker-Host nicht direkt erreicht werden (macvlan-Limitierung). Für Host → Container Kommunikation entweder:
+- Einen Bridge-Container als Proxy verwenden
+- Port-Mappings beibehalten (wie in docker-compose.yml)
+- Über andere Netzwerk-Devices im Netzwerk zugreifen
+
+## Betriebsarten
+
+### 1. Alles mit Docker (Empfohlen für Production)
+
+Startet HAProxy und SlateLink als Container im macvlan-Netzwerk:
 
 ```bash
-cp .env.example .env
 docker compose up -d
 ```
 
-- **HAProxy:** http://localhost:80, https://localhost:443, Stats http://localhost:8404/stats
+- **HAProxy:** Über Port-Mapping oder eigene IP im Netzwerk
 - **Data Plane API:** Port 5555 (Login **admin** / **adminpwd**)
-- **App:** http://localhost:3001 – UI und API unter `/` bzw. `/api/*`
+- **SlateLink App:** http://localhost:3000 (Port-Mapping) oder über Container-IP
 
-Die `.env` nutzt dabei die Docker-Namen (`dataplaneapi:5555`, `haproxy:8404`).
+Die Container kommunizieren über das macvlan-Netzwerk `slatelink-network` und haben eigene IPs. Der SlateLink-Container nutzt `DATAPLANE_API_URL=http://haproxy:5555` automatisch (DNS-Auflösung über Container-Namen).
 
-### 2. Nur HAProxy + DPA in Docker, App lokal (empfohlen für Entwicklung)
+**Hinweis:** 
+- Das lokale Verzeichnis `./haproxy` wird nach `/usr/local/etc/haproxy` im HAProxy-Container gemounted
+- Standardmäßig wird das öffentliche Image `trackhe/slatelink:latest` von Docker Hub verwendet. Um das Image lokal zu bauen, kommentiere in `docker-compose.yml` die `image`-Zeile aus und aktiviere den `build`-Block.
 
-HAProxy und Data Plane API laufen in Docker, die App auf deinem Rechner:
+### 2. Nur HAProxy in Docker, App lokal (Empfohlen für Entwicklung)
+
+HAProxy läuft in Docker, die App auf deinem Rechner:
 
 ```bash
-# HAProxy + Data Plane API starten (Ports 80, 8404, 5555 auf localhost)
-docker compose up -d
+# Nur HAProxy starten (ohne SlateLink-Service)
+docker compose up -d haproxy
 
-# .env für lokale App (muss auf localhost zeigen)
+# .env für lokale App erstellen (muss auf localhost zeigen)
 # DATAPLANE_API_URL=http://localhost:5555
 # DATAPLANE_API_USER=admin
 # DATAPLANE_API_PASSWORD=adminpwd
@@ -66,7 +99,7 @@ bun run dev
 
 - **HAProxy:** Port 80, Stats :8404
 - **Data Plane API:** Port **5555** (Login **admin** / **adminpwd**)
-- **App:** http://localhost:5173 (Vite dev) bzw. 3001 (Production)
+- **App:** http://localhost:5173 (Vite dev) bzw. 3000 (Production: `bun start` oder `node build`)
 
 **Anmeldung:** Die Data Plane API läuft in einem eigenen Container mit festem Login **admin** / **adminpwd** (Userlist in `haproxy/haproxy.cfg`).
 
@@ -74,7 +107,9 @@ bun run dev
 
 Du kannst die App hinter HAProxy hängen und dann im **Dashboard** die Live-Statistiken sehen: Requests, Sessions, Bytes pro Frontend/Backend.
 
-1. In `haproxy.cfg` ein Frontend (z. B. Port 80 oder 8080) so konfigurieren, dass es auf ein Backend mit der App (z. B. `server app 127.0.0.1:3001` oder im Docker-Netz `app:3001`) zeigt.
+1. In `haproxy.cfg` ein Frontend (z. B. Port 80 oder 8080) so konfigurieren, dass es auf ein Backend mit der App zeigt:
+   - Lokal: `server app 127.0.0.1:3000` oder `host.docker.internal:3000`
+   - Docker-Netzwerk: `server app slatelink:3000`
 2. Aufruf der App über HAProxy (z. B. http://localhost/ oder http://localhost:8080/).
 3. Im **Dashboard** erscheint die Sektion **HAProxy-Statistiken (Live)** mit einer Tabelle: Typ (frontend/backend/server), Name, Requests, Sessions, Bytes in/out usw. So siehst du direkt, welches Frontend/Backend wie oft genutzt wird.
 
@@ -159,6 +194,90 @@ Es gibt keine End-to-End- oder UI-Tests; die Tests decken Server-Logik, DB, Data
 - **Architektur & Komponentendiagramme:** [docs/ARCHITEKTUR.md](docs/ARCHITEKTUR.md) – Server-Module, API, Datenfluss (Mermaid).
 - **Module & Funktionen im Code:** [docs/KOMPONENTEN.md](docs/KOMPONENTEN.md) – Konkrete Code-Module (config, db, dataplane, sync, Zertifikate, Audit, Stats) und Zusammenarbeit.
 - **Todo & Codequalität:** [docs/TODO.md](docs/TODO.md) – Fehlerquellen, Variablen ausschreiben, offene Punkte.
+
+## Docker
+
+**Öffentliches Image:** [trackhe/slatelink auf Docker Hub](https://hub.docker.com/r/trackhe/slatelink)
+
+### Container starten (mit öffentlichem Image)
+
+```bash
+docker run -d \
+  --name slatelink \
+  -p 3000:3000 \
+  -v slatelink-data:/data \
+  -e DB_PATH=/data/slatelink.db \
+  -e DATAPLANE_API_URL=http://your-haproxy-host:5555 \
+  -e DATAPLANE_API_USER=admin \
+  -e DATAPLANE_API_PASSWORD=adminpwd \
+  trackhe/slatelink:latest
+```
+
+Dashboard: **http://localhost:3000**
+
+Port anpassen (z. B. 8080):
+
+```bash
+docker run -d -p 8080:3000 -v slatelink-data:/data \
+  -e DB_PATH=/data/slatelink.db \
+  -e DATAPLANE_API_URL=http://your-haproxy-host:5555 \
+  -e DATAPLANE_API_USER=admin \
+  -e DATAPLANE_API_PASSWORD=adminpwd \
+  trackhe/slatelink:latest
+```
+
+### Umgebungsvariablen
+
+| Variable | Beschreibung | Standard |
+|----------|--------------|----------|
+| `PORT` | HTTP-Port | `3000` |
+| `HOST` | Bind-Adresse (z. B. `0.0.0.0` für alle Interfaces) | `0.0.0.0` |
+| `DB_PATH` | Pfad zur SQLite-Datenbank | `/data/slatelink.db` |
+| `DATAPLANE_API_URL` | HAProxy Data Plane API URL | `http://dataplaneapi:5555` |
+| `DATAPLANE_API_USER` | Data Plane API Benutzername | `admin` |
+| `DATAPLANE_API_PASSWORD` | Data Plane API Passwort | `adminpwd` |
+| `NODE_ENV` | Node-Umgebung | `production` |
+
+### Plattformen
+
+Image wird für **linux/amd64** und **linux/arm64** (z. B. Apple Silicon, Raspberry Pi) bereitgestellt.
+
+### Image-Labels (OCI)
+
+Das Image enthält folgende [OCI-Labels](https://github.com/opencontainers/image-spec/blob/main/annotations.md) (auf Docker Hub unter „Labels" sichtbar):
+
+| Label | Beschreibung |
+|-------|--------------|
+| `org.opencontainers.image.source` | GitHub-Repository-URL |
+| `org.opencontainers.image.revision` | Git-Commit (bei CI-Build) |
+| `org.opencontainers.image.version` | Version/Tag (z. B. bei Release) |
+
+### Image selbst bauen
+
+**Nur für deine Architektur (z. B. Apple Silicon):**
+
+```bash
+docker build -t slatelink .
+```
+
+**Multi-Platform (ARM64 + AMD64) und Push zu Docker Hub:**
+
+```bash
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t trackhe/slatelink:latest \
+  --push .
+```
+
+### CI/CD (GitHub Actions)
+
+Bei **Release-Tags** (z. B. `v1.0.0`) baut und pusht der Workflow [`.github/workflows/docker-publish.yml`](.github/workflows/docker-publish.yml) das Image automatisch für **linux/amd64** und **linux/arm64** nach Docker Hub.
+
+**Voraussetzung:** In den GitHub-Repository-Einstellungen unter „Secrets and variables" → Actions die Secrets anlegen:
+
+- `DOCKERHUB_USERNAME` – dein Docker-Hub-Benutzername (z. B. `trackhe`)
+- `DOCKERHUB_TOKEN` – ein [Docker Hub Access Token](https://hub.docker.com/settings/security) (mit Lese-/Schreibrechten für das Repo)
+
+Nach dem Anlegen eines Releases (z. B. Tag `v1.0.0` erstellen und optional „Publish release") wird das Image mit den Tags `latest` und `v1.0.0` gebaut und gepusht.
 
 ## Meilensteine (Git-Tags)
 

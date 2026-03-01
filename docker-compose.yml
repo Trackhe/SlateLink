@@ -1,7 +1,19 @@
+# SlateLink + HAProxy Docker Compose
+# 
+# Netzwerk: macvlan (beide Container bekommen eigene IPs im Netzwerk)
+# WICHTIG: Vor dem Start anpassen:
+#   - networks.slatelink-network.driver_opts.parent: dein Netzwerk-Interface (z.B. eth0, ens18)
+#   - networks.slatelink-network.ipam.config: subnet, gateway und ip_range für dein Netzwerk
+#   - Optional: statische IPs für Container (siehe Kommentare unten)
+#
+# HAProxy-Konfiguration: ./haproxy wird nach /usr/local/etc/haproxy gemounted
+
 services:
   haproxy:
     image: haproxytech/haproxy-alpine:s6-latest
     container_name: haproxy_main
+    # Bei macvlan: Ports optional (Container hat eigene IP)
+    # Entferne Port-Mappings wenn Container direkt über seine IP erreichbar sein soll
     ports:
       - "80:80"
       - "443:443"
@@ -14,3 +26,54 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: always
+    networks:
+      slatelink-network:
+        # Optional: Statische IP für HAProxy festlegen
+        # ipv4_address: 192.168.1.130
+
+  slatelink:
+    # Option 1: Öffentliches Image von Docker Hub
+    image: trackhe/slatelink:latest
+    
+    # Option 2: Lokal bauen (wenn du das Image selbst baust)
+    # Kommentiere die image-Zeile aus und nutze stattdessen:
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    
+    container_name: slatelink_app
+    # Bei macvlan: Ports optional (Container hat eigene IP)
+    ports:
+      - "3000:3000"
+    volumes:
+      - slatelink-data:/data
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - DB_PATH=/data/slatelink.db
+      - NODE_ENV=production
+      # Data Plane API über Docker-Netzwerk erreichbar
+      - DATAPLANE_API_URL=http://haproxy:5555
+      - DATAPLANE_API_USER=admin
+      - DATAPLANE_API_PASSWORD=adminpwd
+    depends_on:
+      - haproxy
+    restart: always
+    networks:
+      slatelink-network:
+        # Optional: Statische IP für SlateLink festlegen
+        # ipv4_address: 192.168.1.131
+
+networks:
+  slatelink-network:
+    driver: macvlan
+    driver_opts:
+      parent: eth0  # Netzwerk-Interface anpassen (z.B. eth0, ens18, etc.)
+    ipam:
+      config:
+        - subnet: 192.168.1.0/24      # Subnet anpassen
+          gateway: 192.168.1.1         # Gateway anpassen
+          ip_range: 192.168.1.128/25   # IP-Bereich für Container
+
+volumes:
+  slatelink-data:

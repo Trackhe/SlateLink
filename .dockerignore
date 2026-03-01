@@ -1,0 +1,42 @@
+# Entwicklungsumgebung
+node_modules/
+.svelte-kit/
+build/
+.vite/
+
+# Tests & Logs
+*.log
+npm-debug.log*
+.DS_Store
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Dokumentation
+docs/
+*.md
+!README.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test-Daten
+*.test.ts
+*.spec.ts
+**/__tests__/
+**/test/
+
+# Build-Artefakte
+dist/
+coverage/
+.nyc_output/
