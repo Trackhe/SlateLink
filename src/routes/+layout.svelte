@@ -12,10 +12,12 @@
     { href: "/config", label: "Übersicht" },
     { href: "/config/acme", label: "ACME-Provider" },
     { href: "/config/crt-stores", label: "Zertifikate & Stores" },
+    { href: "/config/files", label: "Dateien" },
   ];
   $: isConfigOverview = path === "/config";
   $: isConfigAcme = path === "/config/acme" || path.startsWith("/config/acme/");
   $: isConfigCrtStores = path === "/config/crt-stores" || path.startsWith("/config/crt-stores/");
+  $: isConfigFiles = path === "/config/files" || path.startsWith("/config/files/");
 
   let theme: "light" | "dark" = "light";
 
@@ -176,12 +178,14 @@
         class:active={
           item.href === "/config" ? isConfigOverview
           : item.href === "/config/acme" ? isConfigAcme
-          : isConfigCrtStores
+          : item.href === "/config/crt-stores" ? isConfigCrtStores
+          : isConfigFiles
         }
         aria-current={
           (item.href === "/config" && isConfigOverview) ||
           (item.href === "/config/acme" && isConfigAcme && path === "/config/acme") ||
-          (item.href === "/config/crt-stores" && isConfigCrtStores)
+          (item.href === "/config/crt-stores" && isConfigCrtStores) ||
+          (item.href === "/config/files" && isConfigFiles)
             ? "page"
             : undefined
         }

@@ -104,7 +104,7 @@
 					</div>
 					<div>
 						<label for="rule-backend" class="block text-sm font-medium text-[var(--gh-fg)] mb-1"
-							>Backend</label
+							>Backend (bei Treffer dieser Regel)</label
 						>
 						<select
 							id="rule-backend"

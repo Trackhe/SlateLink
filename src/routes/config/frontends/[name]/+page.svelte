@@ -146,8 +146,8 @@
           <input type="text" value={data.frontend.name} disabled class="gh-input mt-1 block w-48" />
         </label>
         <label class="block">
-          <span class="text-sm text-[var(--gh-fg-muted)]">Backend</span>
-          <select bind:value={defaultBackend} class="gh-select mt-1 block">
+          <span class="text-sm text-[var(--gh-fg-muted)]">Default-Backend</span>
+          <select bind:value={defaultBackend} class="gh-select mt-1 block" title="Wird verwendet, wenn keine Regel (ACL) zutrifft – z. B. 404-Seite oder Fallback.">
             <option value="">– wählen –</option>
             {#each data.backends as b}
               <option value={b.name}>{b.name}</option>

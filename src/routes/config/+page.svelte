@@ -240,7 +240,7 @@
       return;
     }
     if (!selectedBackend?.trim()) {
-      frontendError = "Bitte ein Backend auswählen.";
+      frontendError = "Bitte ein Default-Backend wählen (z. B. 404-Seite oder Fallback).";
       return;
     }
     const validBinds = frontendBinds.filter(
@@ -1036,7 +1036,7 @@
   <section class="config-section">
     <h2 class="config-section-title">Regeln</h2>
     <p class="config-section-intro">
-      Pro Regel: Frontend, Domains, Backend, Zertifikat (optional) und optional HTTP→HTTPS-Redirect für diese Domain.
+      Pro Regel: Frontend, Domains und das Backend für diese Regel (wenn die Domains zutreffen). Mehrere Regeln pro Frontend möglich – jede mit eigenem Backend. Optional: Zertifikat, HTTP→HTTPS-Redirect.
     </p>
     {#if Array.isArray(data.rules) && data.rules.length > 0}
       <div class="gh-tile-grid">
@@ -1734,7 +1734,10 @@
                   />
                 </label>
                 <label class="block">
-                  <span class="text-sm text-[var(--gh-fg-muted)]">Backend</span>
+                  <span class="text-sm text-[var(--gh-fg-muted)]">Default-Backend</span>
+                  <p class="text-xs text-[var(--gh-fg-muted)] mt-0.5 mb-1">
+                    Wird verwendet, wenn keine Regel (ACL) zutrifft – z. B. 404-Seite oder Fallback.
+                  </p>
                   <select
                     bind:value={detailDefaultBackend}
                     class="mt-1 block w-full rounded border border-[var(--gh-border)] bg-[var(--gh-canvas)] text-[var(--gh-fg)] px-3 py-2 text-sm"
@@ -1962,7 +1965,10 @@
                   />
                 </label>
                 <label class="block">
-                  <span class="text-sm text-[var(--gh-fg-muted)]">Backend</span>
+                  <span class="text-sm text-[var(--gh-fg-muted)]">Default-Backend</span>
+                  <p class="text-xs text-[var(--gh-fg-muted)] mt-0.5 mb-1">
+                    Wird verwendet, wenn keine Regel (ACL) zutrifft – z. B. 404-Seite oder Fallback.
+                  </p>
                   <select
                     bind:value={selectedBackend}
                     class="mt-1 block w-full rounded border border-[var(--gh-border)] bg-[var(--gh-canvas)] text-[var(--gh-fg)] px-3 py-2 text-sm"
