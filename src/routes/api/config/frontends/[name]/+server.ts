@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getFrontend, getBinds, getBind, getBackends, getDefaults, updateDefaults, updateFrontend, deleteFrontend, syncRedirectHttpToHttps } from '$lib/server/dataplane';
+import { getFrontend, getBinds, getBind, getBackends, getDefaults, updateDefaults, updateFrontend, deleteFrontend, syncRedirectHttpToHttps, ensure404Backend, DEFAULT_BACKEND_404_NAME } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
 import { getFrontendOptions, setFrontendOptions } from '$lib/server/db';
 import { toDpaList } from '$lib/server/dpa-utils';
@@ -90,6 +90,10 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 		const body = (await request.json()) as Record<string, unknown>;
 		if (!body || typeof body !== 'object') {
 			return json({ error: 'Body must be JSON object' }, { status: 400 });
+		}
+		const defaultBackend = typeof body.default_backend === 'string' ? body.default_backend.trim() : '';
+		if (defaultBackend === DEFAULT_BACKEND_404_NAME) {
+			await ensure404Backend();
 		}
 		const options = body.options as { forwardClientIp?: boolean; forwardProto?: boolean; websocketSupport?: boolean } | undefined;
 		const { options: _opts, ...frontendBody } = body;

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { invalidateAll } from "$app/navigation";
+  import { DEFAULT_BACKEND_404_NAME } from "$lib/shared/constants";
 
   export let data: {
     frontend: Record<string, unknown> | null;
@@ -149,6 +150,7 @@
           <span class="text-sm text-[var(--gh-fg-muted)]">Default-Backend</span>
           <select bind:value={defaultBackend} class="gh-select mt-1 block" title="Wird verwendet, wenn keine Regel (ACL) zutrifft – z. B. 404-Seite oder Fallback.">
             <option value="">– wählen –</option>
+            <option value={DEFAULT_BACKEND_404_NAME}>404 (Fehlerseite)</option>
             {#each data.backends as b}
               <option value={b.name}>{b.name}</option>
             {/each}

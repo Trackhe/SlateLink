@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invalidateAll } from "$app/navigation";
   import { isValidBindAddress } from "$lib/shared/bind-validation";
+  import { DEFAULT_BACKEND_404_NAME } from "$lib/shared/constants";
   import RuleModal from "$lib/components/config/RuleModal.svelte";
 
   type Named = { name: string };
@@ -1743,6 +1744,7 @@
                     class="mt-1 block w-full rounded border border-[var(--gh-border)] bg-[var(--gh-canvas)] text-[var(--gh-fg)] px-3 py-2 text-sm"
                   >
                     <option value="">– Backend wählen –</option>
+                    <option value={DEFAULT_BACKEND_404_NAME}>404 (Fehlerseite)</option>
                     {#each d.backends as b}
                       <option value={b.name}>{b.name}</option>
                     {/each}
@@ -1937,7 +1939,7 @@
           <!-- Create mode -->
           {#if !hasBackends}
             <p class="gh-alert-warning config-section">
-              Keine Backends vorhanden. Bitte zuerst ein Backend anlegen.
+              Keine weiteren Backends. Sie können „404 (Fehlerseite)“ als Default-Backend wählen oder ein Backend anlegen.
             </p>
           {/if}
           {#if frontendError}
@@ -1972,9 +1974,9 @@
                   <select
                     bind:value={selectedBackend}
                     class="mt-1 block w-full rounded border border-[var(--gh-border)] bg-[var(--gh-canvas)] text-[var(--gh-fg)] px-3 py-2 text-sm"
-                    disabled={!hasBackends}
                   >
                     <option value="">– Backend wählen –</option>
+                    <option value={DEFAULT_BACKEND_404_NAME}>404 (Fehlerseite)</option>
                     {#each data.backends as b}
                       <option value={b.name}>{b.name}</option>
                     {/each}
@@ -2106,7 +2108,6 @@
               <button
                 type="submit"
                 disabled={frontendBusy ||
-                  !hasBackends ||
                   !selectedBackend?.trim() ||
                   frontendBinds.length === 0}
                 class="btn btn-primary"

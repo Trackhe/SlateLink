@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { DEFAULT_BACKEND_404_NAME } from '$lib/shared/constants';
 
   export let data: { backends: { name: string }[] };
 
@@ -22,7 +23,7 @@
       return;
     }
     if (!selectedBackend?.trim()) {
-      error = 'Bitte ein Backend auswählen. Zuerst unter Config ein Backend anlegen.';
+      error = 'Bitte ein Default-Backend wählen (z. B. „404 (Fehlerseite)“ oder ein angelegtes Backend).';
       return;
     }
     busy = true;
@@ -69,7 +70,7 @@
 {/if}
 
 {#if !hasBackends}
-  <p class="gh-alert-warning config-section">Keine Backends vorhanden. Bitte zuerst ein <a href="/config/backends/new" class="underline">Backend anlegen</a>.</p>
+  <p class="gh-alert-warning config-section">Keine weiteren Backends. Sie können „404 (Fehlerseite)“ als Default-Backend wählen oder ein <a href="/config/backends/new" class="underline">Backend anlegen</a>.</p>
 {/if}
 
 <form on:submit|preventDefault={submit} class="space-y-6 max-w-2xl">
@@ -81,9 +82,10 @@
         <input type="text" bind:value={frontendName} class="gh-input mt-1 block w-full" placeholder="z. B. myapp_front" />
       </label>
       <label class="block">
-        <span class="text-sm text-[var(--gh-fg-muted)]">Backend</span>
-        <select bind:value={selectedBackend} class="gh-select mt-1 block w-full" disabled={!hasBackends}>
+        <span class="text-sm text-[var(--gh-fg-muted)]">Default-Backend</span>
+        <select bind:value={selectedBackend} class="gh-select mt-1 block w-full">
           <option value="">– Backend wählen –</option>
+          <option value={DEFAULT_BACKEND_404_NAME}>404 (Fehlerseite)</option>
           {#each data.backends as b}
             <option value={b.name}>{b.name}</option>
           {/each}
@@ -121,7 +123,7 @@
   </section>
 
   <div class="flex gap-3">
-    <button type="submit" disabled={busy || !hasBackends || !selectedBackend?.trim()} class="btn btn-primary">
+    <button type="submit" disabled={busy || !selectedBackend?.trim()} class="btn btn-primary">
       {busy ? 'Wird angelegt …' : 'Frontend anlegen'}
     </button>
     <a href="/config" class="btn btn-secondary">Abbrechen</a>

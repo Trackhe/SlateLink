@@ -10,7 +10,9 @@ import {
 	usedConfigNames,
 	getAllUsedBindEndpoints,
 	bindEndpointKey,
-	syncRedirectHttpToHttps
+	syncRedirectHttpToHttps,
+	ensure404Backend,
+	DEFAULT_BACKEND_404_NAME
 } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
 import { setFrontendOptions } from '$lib/server/db';
@@ -44,6 +46,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 		const name = String(body.name).trim();
 		const default_backend = String(body.default_backend).trim();
+		if (default_backend === DEFAULT_BACKEND_404_NAME) {
+			await ensure404Backend();
+		}
 		const [frontendsRaw, backendsRaw] = await Promise.all([getFrontends(), getBackends()]);
 		if (usedConfigNames(frontendsRaw, backendsRaw).has(name)) {
 			return json(

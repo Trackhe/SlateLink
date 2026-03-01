@@ -7,6 +7,7 @@
  */
 import { dpaBaseUrl, dpaAuthHeader } from '$lib/server/config';
 import { toDpaList } from '$lib/server/dpa-utils';
+import { DEFAULT_BACKEND_404_NAME } from '$lib/shared/constants';
 
 const dpaFetch = async (path: string, query?: Record<string, string>) => {
 	const url = new URL(path, dpaBaseUrl);
@@ -138,6 +139,9 @@ export async function getFrontend(name: string): Promise<unknown> {
 	);
 }
 
+/** Re-export für API/Server. */
+export { DEFAULT_BACKEND_404_NAME } from '$lib/shared/constants';
+
 /** Backends aus der HAProxy-Konfiguration. */
 export async function getBackends(): Promise<unknown> {
 	return dpaFetch('/v3/services/haproxy/configuration/backends');
@@ -229,6 +233,40 @@ export async function deleteBackend(name: string): Promise<void> {
 	await dpaMutate(
 		'DELETE',
 		`/v3/services/haproxy/configuration/backends/${encodeURIComponent(name)}`
+	);
+}
+
+const backendHttpRequestRulesPath = (backendName: string) =>
+	`/v3/services/haproxy/configuration/backends/${encodeURIComponent(backendName)}/http_request_rules`;
+
+/** HTTP-Request-Regel in einem Backend anlegen (POST). index = Einfügeposition (0-basiert). */
+export async function createBackendHttpRequestRule(
+	backendName: string,
+	body: Record<string, unknown>,
+	index: number
+): Promise<unknown> {
+	const path = `${backendHttpRequestRulesPath(backendName)}/${index}`;
+	return dpaMutate('POST', path, body);
+}
+
+/**
+ * Stellt sicher, dass das eingebaute 404-Backend (slatelink-404) existiert.
+ * Wird als Default-Backend verwendet, wenn keine ACL-Regel zutrifft.
+ * Legt das Backend nur an, wenn es noch nicht existiert.
+ */
+export async function ensure404Backend(): Promise<void> {
+	const backendsRaw = await getBackends();
+	const names = toNameList(backendsRaw);
+	if (names.includes(DEFAULT_BACKEND_404_NAME)) return;
+
+	await createBackend({
+		name: DEFAULT_BACKEND_404_NAME,
+		mode: 'http'
+	});
+	await createBackendHttpRequestRule(
+		DEFAULT_BACKEND_404_NAME,
+		{ type: 'return', return_status_code: 404 },
+		0
 	);
 }
 
