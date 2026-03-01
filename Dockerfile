@@ -27,6 +27,9 @@ RUN npm ci
 # Quellcode und Konfigurationsdateien kopieren
 COPY . .
 
+# SvelteKit-Sync ausführen (erzeugt .svelte-kit mit tsconfig.json)
+RUN npx svelte-kit sync
+
 # SvelteKit-App bauen
 RUN npm run build
 
