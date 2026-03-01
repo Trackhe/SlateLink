@@ -11,6 +11,7 @@ import {
 	getAllUsedBindEndpoints,
 	bindEndpointKey,
 	syncRedirectHttpToHttps,
+	syncXForwardedProto,
 	ensure404Backend,
 	DEFAULT_BACKEND_404_NAME
 } from '$lib/server/dataplane';
@@ -118,6 +119,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 
 		await syncRedirectHttpToHttps(name, options.redirectHttpToHttps ?? false);
+		await syncXForwardedProto(name, options.forwardProto ?? false);
 
 		if (options.forwardClientIp || options.websocketSupport) {
 			const defaultsRaw = await getDefaults();

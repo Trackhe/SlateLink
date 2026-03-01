@@ -4,6 +4,8 @@ import {
 	getBackend,
 	getFrontends,
 	getServers,
+	getServer,
+	updateServer,
 	frontendNamesUsingBackend,
 	updateBackend,
 	deleteBackend
@@ -34,11 +36,25 @@ export const GET: RequestHandler = async ({ params }) => {
 
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
-		const body = await request.json();
+		const body = (await request.json()) as Record<string, unknown>;
 		if (!body || typeof body !== 'object') {
 			return json({ error: 'Body must be JSON object' }, { status: 400 });
 		}
-		const result = await updateBackend(params.name, body as Record<string, unknown>);
+		const useHttpsBackend = body.mode === 'https';
+		const payload = { ...body };
+		if (useHttpsBackend) payload.mode = 'http';
+		const result = await updateBackend(params.name, payload);
+		if (useHttpsBackend) {
+			const serversRaw = await getServers(params.name);
+			const list = Array.isArray(serversRaw) ? serversRaw : (serversRaw as { data?: unknown[] })?.data ?? [];
+			for (const s of list) {
+				const serverName = (s as { name?: string }).name;
+				if (typeof serverName !== 'string') continue;
+				const existing = (await getServer(params.name, serverName)) as Record<string, unknown> | undefined;
+				const merged = existing ? { ...existing, ssl: 'enabled' as const, verify: 'none' as const } : { ssl: 'enabled' as const, verify: 'none' as const };
+				await updateServer(params.name, serverName, merged);
+			}
+		}
 		logAction({
 			action: 'backend_updated',
 			resource_type: 'backend',

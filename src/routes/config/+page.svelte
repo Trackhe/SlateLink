@@ -32,7 +32,7 @@
   let backendBusy = false;
   let backendError = "";
   let backendName = "";
-  let backendMode: "http" | "tcp" | "udp" = "http";
+  let backendMode: "http" | "tcp" | "udp" | "https" = "http";
   let balanceAlgorithm = "roundrobin";
   type CheckType = "off" | "tcp" | "http";
   let checkType: CheckType = "off";
@@ -551,7 +551,9 @@
       detailBackendData = json;
       backendName = (json.backend?.name as string) ?? name;
       const mode = (json.backend?.mode as string) ?? "http";
-      backendMode = mode === "tcp" ? "tcp" : mode === "udp" ? "udp" : "http";
+      const servers = Array.isArray(json.servers) ? json.servers : [];
+      const allSsl = servers.length > 0 && servers.every((s: { ssl?: string }) => s?.ssl === "enabled");
+      backendMode = mode === "tcp" ? "tcp" : mode === "udp" ? "udp" : allSsl ? "https" : "http";
       const bal = (json.backend as { balance?: { algorithm?: string } })
         ?.balance?.algorithm;
       balanceAlgorithm = typeof bal === "string" ? bal : "roundrobin";
@@ -627,7 +629,9 @@
       );
       detailBackendData = await refetch.json();
       const mode = (detailBackendData?.backend?.mode as string) ?? "http";
-      backendMode = mode === "tcp" ? "tcp" : mode === "udp" ? "udp" : "http";
+      const servers = Array.isArray(detailBackendData?.servers) ? detailBackendData.servers : [];
+      const allSsl = servers.length > 0 && servers.every((s: { ssl?: string }) => s?.ssl === "enabled");
+      backendMode = mode === "tcp" ? "tcp" : mode === "udp" ? "udp" : allSsl ? "https" : "http";
       const bal = (
         detailBackendData?.backend as { balance?: { algorithm?: string } }
       )?.balance?.algorithm;
@@ -657,6 +661,7 @@
               detailAddServerAddress.replace(/[.:]/g, "_"),
             address: detailAddServerAddress.trim(),
             port: detailAddServerPort,
+            ...(backendMode === "https" ? { ssl: true } : {}),
           }),
         },
       );
@@ -1160,6 +1165,7 @@
                     class="mt-1 block w-full rounded border border-[var(--gh-border)] bg-[var(--gh-canvas)] text-[var(--gh-fg)] px-3 py-2 text-sm"
                   >
                     <option value="http">HTTP</option>
+                    <option value="https">HTTPS</option>
                     <option value="tcp">TCP</option>
                     <option value="udp">UDP</option>
                   </select>
@@ -1442,6 +1448,7 @@
                     class="mt-1 block w-full rounded border border-[var(--gh-border)] bg-[var(--gh-canvas)] text-[var(--gh-fg)] px-3 py-2 text-sm"
                   >
                     <option value="http">HTTP</option>
+                    <option value="https">HTTPS</option>
                     <option value="tcp">TCP</option>
                     <option value="udp">UDP</option>
                   </select>

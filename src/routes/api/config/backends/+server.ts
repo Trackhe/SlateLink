@@ -13,12 +13,18 @@ type ServerInput = {
 	rise?: number;
 };
 
+/** HAProxy kennt nur mode http/tcp/udp; „https“ = Backend mit mode http, Server mit ssl. */
+function haproxyMode(mode: string): 'http' | 'tcp' | 'udp' {
+	if (mode === 'tcp' || mode === 'udp') return mode;
+	return 'http';
+}
+
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const body = await request.json();
 		if (!body || typeof body !== 'object' || !body.name) {
 			return json(
-				{ error: 'Body must be JSON with at least { "name": "..." }. Optional: mode, balance: { algorithm }, servers: [ { name?, address, port?, check?, inter?, fall?, rise? } ]' },
+				{ error: 'Body must be JSON with at least { "name": "..." }. Optional: mode (http|tcp|udp|https), balance: { algorithm }, servers: [ { name?, address, port?, check?, inter?, fall?, rise? } ]' },
 				{ status: 400 }
 			);
 		}
@@ -30,9 +36,10 @@ export const POST: RequestHandler = async ({ request }) => {
 				{ status: 409 }
 			);
 		}
+		const useHttpsBackend = body.mode === 'https';
 		const backendPayload: Record<string, unknown> = {
 			name,
-			mode: body.mode ?? 'http',
+			mode: haproxyMode(body.mode ?? 'http'),
 			balance: body.balance ?? { algorithm: 'roundrobin' }
 		};
 		// HTTP-Check: Backend-Option „option httpchk [method] [uri]“ (DPA-Felder je nach Version)
@@ -61,12 +68,16 @@ export const POST: RequestHandler = async ({ request }) => {
 			const serverPayload: Record<string, unknown> = {
 				name: (s.name && String(s.name).trim()) || s.address.replace(/[.:]/g, '_'),
 				address: s.address.trim(),
-				port: Number.isInteger(port) && port > 0 ? port : 80
+				port: Number.isInteger(port) && port > 0 ? port : useHttpsBackend ? 443 : 80
 			};
 			if (s.check !== undefined) serverPayload.check = String(s.check);
 			if (s.inter !== undefined) serverPayload.inter = typeof s.inter === 'number' ? `${s.inter}s` : String(s.inter);
 			if (s.fall !== undefined && Number.isInteger(s.fall)) serverPayload.fall = s.fall;
 			if (s.rise !== undefined && Number.isInteger(s.rise)) serverPayload.rise = s.rise;
+			if (useHttpsBackend) {
+				serverPayload.ssl = 'enabled';
+				serverPayload.verify = 'none';
+			}
 			await createServer(name, serverPayload);
 		}
 		logAction({

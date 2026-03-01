@@ -4,7 +4,7 @@
 
   export let data: {
     backend: Record<string, unknown> | null;
-    servers: { name?: string; address?: string; port?: number; check?: string }[];
+    servers: { name?: string; address?: string; port?: number; check?: string; ssl?: string }[];
     frontendsUsingThis: string[];
     canDelete: boolean;
     error: string | null;
@@ -14,7 +14,9 @@
   let deleteError = '';
   let saveError = '';
   let saving = false;
-  let backendMode = (data.backend?.mode as string) ?? 'http';
+  const allServersSsl = (data.servers?.length ?? 0) > 0 && (data.servers ?? []).every((s) => s?.ssl === 'enabled');
+  const rawMode = (data.backend?.mode as string) ?? 'http';
+  let backendMode: 'http' | 'tcp' | 'udp' | 'https' = rawMode === 'tcp' ? 'tcp' : rawMode === 'udp' ? 'udp' : allServersSsl ? 'https' : 'http';
   let addServerName = '';
   let addServerAddress = '';
   let addServerPort = 80;
@@ -90,7 +92,8 @@
         body: JSON.stringify({
           name: addServerName.trim() || addServerAddress.replace(/[.:]/g, '_'),
           address: addServerAddress.trim(),
-          port: addServerPort
+          port: addServerPort,
+          ...(backendMode === 'https' ? { ssl: true } : {})
         })
       });
       const j = await res.json().catch(() => ({}));
@@ -170,7 +173,9 @@
           <span class="text-sm text-[var(--gh-fg-muted)]">Mode</span>
           <select bind:value={backendMode} class="gh-select mt-1 block">
             <option value="http">http</option>
+            <option value="https">https</option>
             <option value="tcp">tcp</option>
+            <option value="udp">udp</option>
           </select>
         </label>
         <button type="button" class="btn btn-primary" disabled={saving} on:click={saveBackend}>

@@ -428,6 +428,46 @@ export async function syncRedirectHttpToHttps(frontendName: string, enable: bool
 	}
 }
 
+/** X-Forwarded-Proto setzen (https wenn Client TLS nutzt, sonst http). Verhindert Redirect-Schleifen bei HTTP-Backends hinter HTTPS-Frontend. */
+export async function syncXForwardedProto(frontendName: string, enable: boolean): Promise<void> {
+	try {
+		const rules = (await getHttpRequestRules(frontendName)) as { type?: string; hdr_name?: string; index?: number }[];
+		const protoIndices = rules
+			.map((r, i) => ({ r, index: r?.index ?? i }))
+			.filter(({ r }) => r?.type === 'set-header' && r?.hdr_name === 'X-Forwarded-Proto')
+			.sort((a, b) => b.index - a.index);
+		for (const { index } of protoIndices) {
+			await deleteHttpRequestRule(frontendName, index);
+		}
+		if (enable) {
+			await createHttpRequestRule(
+				frontendName,
+				{
+					type: 'set-header',
+					hdr_name: 'X-Forwarded-Proto',
+					hdr_format: 'https',
+					cond: 'if',
+					cond_test: '{ ssl_fc }'
+				},
+				0
+			);
+			await createHttpRequestRule(
+				frontendName,
+				{
+					type: 'set-header',
+					hdr_name: 'X-Forwarded-Proto',
+					hdr_format: 'http',
+					cond: 'unless',
+					cond_test: '{ ssl_fc }'
+				},
+				1
+			);
+		}
+	} catch {
+		// DPA oder Version unterstützt http_request_rules ggf. nicht
+	}
+}
+
 /** ACLs eines Frontends (GET). */
 export async function getFrontendAcls(frontendName: string): Promise<unknown> {
 	const list = await dpaFetch(

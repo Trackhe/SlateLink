@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getFrontend, getBinds, getBind, getBackends, getDefaults, updateDefaults, updateFrontend, deleteFrontend, syncRedirectHttpToHttps, ensure404Backend, DEFAULT_BACKEND_404_NAME } from '$lib/server/dataplane';
+import { getFrontend, getBinds, getBind, getBackends, getDefaults, updateDefaults, updateFrontend, deleteFrontend, syncRedirectHttpToHttps, syncXForwardedProto, ensure404Backend, DEFAULT_BACKEND_404_NAME } from '$lib/server/dataplane';
 import { logAction } from '$lib/server/audit';
 import { getFrontendOptions, setFrontendOptions } from '$lib/server/db';
 import { toDpaList } from '$lib/server/dpa-utils';
@@ -108,6 +108,7 @@ export const PUT: RequestHandler = async ({ params, request }) => {
 			});
 		}
 		await syncRedirectHttpToHttps(params.name, options?.redirectHttpToHttps ?? false);
+		await syncXForwardedProto(params.name, options?.forwardProto ?? false);
 		if (options && (options.forwardClientIp || options.websocketSupport)) {
 			const defaultsRaw = await getDefaults();
 			const defaultsList = toDpaList(defaultsRaw);
